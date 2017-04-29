@@ -29,7 +29,7 @@ if ( env.name !== 'production' ) {
 app.on('ready', () => {
   setApplicationMenu();
   const twitch = new TwitchApi({
-    clientId: 'qeic6h3quermkgs6pa9d4cgw8gg028'
+    clientId: appConfig.twitch.clientId
   });
 
   const mainWindow = createWindow('main', {
@@ -63,14 +63,13 @@ app.on('ready', () => {
     };
 
     const windowParams = {
-      name: 'test-window',
+      name: 'twitch-auth-window',
       alwaysOnTop: true,
       autoHideMenuBar: true,
       maximizable: false,
       resizable: false,
       webPreferences: {
-          nodeIntegration: false,
-          session: 'persist:*'
+        nodeIntegration: false,
       },
       width: 404,
       height: 582,
