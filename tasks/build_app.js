@@ -19,10 +19,10 @@ gulp.task('bundle', () => {
 });
 
 gulp.task('less', () => {
-  return gulp.src(srcDir.path('stylesheets/main.less'))
-  .pipe(plumber())
-  .pipe(less())
-  .pipe(gulp.dest(destDir.path('stylesheets')));
+  return gulp.src(srcDir.path('styles/app.less'))
+    .pipe(plumber())
+    .pipe(less())
+    .pipe(gulp.dest(destDir.path()));
 });
 
 gulp.task('environment', () => {
@@ -43,8 +43,14 @@ gulp.task('watch', () => {
   watch('src/**/*.js', batch((events, done) => {
     gulp.start('bundle', beepOnError(done));
   }));
+
+  watch('src/**/*.vue', batch((events, done) => {
+    gulp.start('bundle', beepOnError(done));
+  }));
+
   watch('src/**/*.less', batch((events, done) => {
     gulp.start('less', beepOnError(done));
+    gulp.start('bundle', beepOnError(done));
   }));
 });
 

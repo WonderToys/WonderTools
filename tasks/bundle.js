@@ -1,6 +1,7 @@
 const path = require('path');
 const jetpack = require('fs-jetpack');
 const rollup = require('rollup').rollup;
+const vue = require('rollup-plugin-vue');
 
 const nodeBuiltInModules = ['assert', 'buffer', 'child_process', 'cluster',
   'console', 'constants', 'crypto', 'dgram', 'dns', 'domain', 'events',
@@ -26,7 +27,13 @@ module.exports = (src, dest, opts) => {
   const options = opts || {};
 
   const plugins = [
-    // Add rollup plugins here
+    vue({
+      compileTemplate: true,
+      css: path.join(path.dirname(dest), 'main.css'),
+      less: {
+        paths: 'src/client'
+      }
+    })
   ];
 
   return rollup({

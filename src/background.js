@@ -1,18 +1,17 @@
-// This is main process of Electron, started as first thing when your
-// app starts. This script is running through entire life of your application.
-// It doesn't have any windows which you can see on screen, but we can open
-// window from here.
-
 import path from 'path';
 import url from 'url';
-import { app, Menu } from 'electron';
-import { devMenuTemplate } from './menu/dev_menu_template';
-import { editMenuTemplate } from './menu/edit_menu_template';
-import createWindow from './helpers/window';
+import { app, ipcMain, Menu, session } from 'electron';
+import electronOauth2 from 'electron-oauth2';
+import jetpack from 'fs-jetpack';
+import TwitchApi from 'twitch-api';
 
-// Special module holding environment variables which you declared
-// in config/env_xxx.json file.
+import { devMenuTemplate } from './window/menu/dev_menu_template';
+import { editMenuTemplate } from './window/menu/edit_menu_template';
+import createWindow from './window/helpers/window';
+
 import env from './env';
+
+import appConfig from '../config';
 
 const setApplicationMenu = () => {
   const menus = [editMenuTemplate];
@@ -22,21 +21,26 @@ const setApplicationMenu = () => {
   Menu.setApplicationMenu(Menu.buildFromTemplate(menus));
 };
 
-// Save userData in separate folders for each environment.
-// Thanks to this you can use production and development versions of the app
-// on same machine like those are two separate apps.
-if (env.name !== 'production') {
+if ( env.name !== 'production' ) {
   const userDataPath = app.getPath('userData');
   app.setPath('userData', `${userDataPath} (${env.name})`);
 }
 
 app.on('ready', () => {
   setApplicationMenu();
+  const twitch = new TwitchApi({
+    clientId: 'qeic6h3quermkgs6pa9d4cgw8gg028'
+  });
 
   const mainWindow = createWindow('main', {
-    width: 1000,
-    height: 600,
+    width: 1024,
+    height: 576,
+    maximizable: false,
+    resizable: false,
+    titleBarStyle: 'hidden'
   });
+
+  mainWindow.setMenuBarVisibility(false);
 
   mainWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'app.html'),
@@ -45,8 +49,72 @@ app.on('ready', () => {
   }));
 
   if (env.name === 'development') {
-    mainWindow.openDevTools();
+    //mainWindow.openDevTools();
   }
+
+  ipcMain.on('twitch-auth', (event, kind) => {
+    var config = {
+      clientId: appConfig.twitch.clientId,
+      clientSecret: appConfig.twitch.clientSecret,
+      authorizationUrl: 'https://api.twitch.tv/kraken/oauth2/authorize',
+      tokenUrl: 'https://api.twitch.tv/kraken/oauth2/token',
+      useBasicAuthorizationHeader: false,
+      redirectUri: 'http://localhost'
+    };
+
+    const windowParams = {
+      name: 'test-window',
+      alwaysOnTop: true,
+      autoHideMenuBar: true,
+      maximizable: false,
+      resizable: false,
+      webPreferences: {
+          nodeIntegration: false,
+          session: 'persist:*'
+      },
+      width: 404,
+      height: 582,
+    }
+
+    const options = {
+      scope: 'user_read'
+    };
+
+    if ( kind === 'bot' ) {
+      options.scope += ' chat_login';
+    }
+    else if ( kind === 'streamer' ) {
+
+    }
+
+    const myApiOauth = electronOauth2(config, windowParams);
+    myApiOauth.getAccessToken(options)
+      .then((token) => {
+        twitch.getAuthenticatedUser(token.access_token, (err, result) => {
+          if ( err != null ) {
+            return event.sender.send('twitch-auth-reply', {
+              error: err
+            });
+          }
+
+          if ( result != null ) {
+            token.display_name = result.display_name;
+            token.user_id = result._id.toString();
+          }
+
+          event.sender.send('twitch-auth-reply', { 
+            kind, 
+            response: token
+          });
+        });
+
+        session.defaultSession.clearStorageData();
+      })
+      .catch((error) => {
+        session.defaultSession.clearStorageData();
+        return event.sender.send('twitch-auth-reply', { error });
+      });
+  });
 });
 
 app.on('window-all-closed', () => {

@@ -12,5 +12,7 @@ Thumbs.db
 /app/**/*.map
 
 /dist
-
 /coverage
+/modules
+
+config.js
