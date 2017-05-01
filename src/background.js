@@ -76,14 +76,11 @@ app.on('ready', () => {
     }
 
     const options = {
-      scope: 'user_read'
+      scope: 'user_read chat_login'
     };
 
-    if ( kind === 'bot' ) {
-      options.scope += ' chat_login';
-    }
-    else if ( kind === 'streamer' ) {
-
+    if ( kind === 'streamer' ) {
+      
     }
 
     const myApiOauth = electronOauth2(config, windowParams);

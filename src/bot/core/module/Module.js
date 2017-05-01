@@ -17,6 +17,10 @@ class Module {
   get variables() {
     return [];
   }
+
+  get providers() {
+    return {};
+  }
 };
 
 // Exports

@@ -13,8 +13,10 @@ class Request {
     this._viewer = viewer;
     this._username = viewer.username;
 
+    this._commandText = null;
     this._command = null;
     this._params = null;
+    this._metadata = null;
   }
 
   // -----
@@ -27,6 +29,10 @@ class Request {
 
   get channel() {
     return this._channel;
+  }
+
+  get commandText() {
+    return this._commandText;
   }
 
   get command() {

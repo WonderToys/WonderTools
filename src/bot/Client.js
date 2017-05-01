@@ -98,6 +98,7 @@ class Client {
       client.on('join', (channel, user) => {
         if ( this._isConnecting === true ) return;
 
+        moduleStore.notify('onJoin', { channel, user });
         viewerStore.trackActive(user, true);
 
         if ( user === me ) {
@@ -111,6 +112,7 @@ class Client {
       client.on('part', (channel, user) => {
         if ( this._isConnecting === true ) return;
 
+        moduleStore.notify('onPart', { channel, user });
         viewerStore.trackActive(user, false);
       }); //- part
 
@@ -141,6 +143,17 @@ class Client {
     });
   }; //- _setupListeners()
 
+  // _validateCommand()
+  _validateCommand(request) {
+    return moduleStore.notify('validateCommand', request)
+      .then(() => {
+        const canExecute = request.command.canExecute(request.viewer);
+        if ( canExecute === false ) throw false;
+
+        return canExecute;
+      });
+  } //- _validateCommand()
+
   // _handleRequest()
   _handleRequest(request) {
     const message = request.message;
@@ -151,44 +164,37 @@ class Client {
     const parsed = resolveCommand(message, messageType);
     const reply = this._getReply(request);
 
-    // if ( parsed == null ) {    
-    //   const modSystem = systemManager.getOne('$ModSystem');
+    moduleStore.notify('preCommand', request)
+      .then(() => {
+        if ( parsed != null && parsed.command.isEnabled !== false ) {
+          request._commandText = parsed.commandText;
+          request._command = parsed.command;
+          request._params = parsed.params;
+          request._metadata = parsed.command.metadata;
 
-    //   if ( modSystem != null && modSystem.hasLinks(message, viewer) === true ) {
-    //     const linksConfig = modSystem.config;
+          const cooldown = parsed.command.onCooldown(viewer);
+          if ( cooldown !== false && moment.isDuration(cooldown) ) {
+            const secs = Math.round(cooldown.asSeconds());
+            throw new Error(`Hey $user, you have another ${ secs }s to wait before you can execute that again!`);
+          }
 
-    //     reply(`/timeout $user ${ linksConfig.linkTimeoutLength }`);
-    //     reply(`Hey $user, we don't allow that kind 'round here! (Link timeout: ${ linksConfig.linkTimeoutLength }s)`);
+          return this._validateCommand(request);
+        }
 
-    //     return;
-    //   }
-    // }
-
-    if ( parsed != null && parsed.command.metadata.enabled !== false ) {
-      const cooldown = parsed.command.onCooldown(viewer);
-      if ( cooldown !== false && moment.isDuration(cooldown) ) {
-        const secs = Math.round(cooldown.asSeconds());
-        reply(`Hey $user, you have another ${ secs }s to wait before you can execute that again!`);
-        return;
-      }
-
-      // Ensure we can afford the command
-      // if ( parsed.command.pointCost != null && parsed.command.pointCost > 0 ) {
-      //   if ( viewer.points.amount < parsed.command.pointCost ) {
-      //     reply(`Hey ${ viewer.displayName }, you can't afford that action! FeelsBadMan`);
-      //     return;
-      //   }
-      // }
-
-      // Ensure we have a high enough access level
-      if ( parsed.command.canExecute(viewer) ) {
-        request._command = parsed.commandText;
-        request._params = parsed.params;
-        request._metadata = parsed.command.metadata;
-
-        executeCommand(parsed.command, request, reply);
-      }
-    }
+        throw null;
+      })
+      .then((result) => {
+        return executeCommand(parsed.command, request, reply);
+      })
+      .then(() => moduleStore.notify('postCommand', request));
+      .catch((result) => {
+        if ( Array.isArray(result) ) {
+          result.forEach(res => reply(res));
+        }
+        else if ( typeof(result) === 'string' ) {
+          reply(result);
+        }
+      });
   }; //- _handleRequest()
 
   // -----
