@@ -51,6 +51,8 @@ class VariableStore {
 
     this._variables = this._variables.filter(v => !_variableNamesMatch(v.name, variable.name));
     this._variables.push(variable);
+
+    return variable;
   }
 
   // -----
@@ -66,18 +68,24 @@ class VariableStore {
   load() {
     this._variables = [];
 
-    return new Promise((resolve, reject) => {
-      const promises = [];
+    const promises = [];
 
-      // Add built-in variables
-      promises.concat(builtInVariables.map((v) => {
-        return this._register(v);
-      }));
+    // Add built-in variables
+    promises.concat(builtInVariables.map((v) => {
+      return this._register(v);
+    }));
 
-      Promise.all(promises)
-        .then(resolve)
-        .catch(reject);
+    return Promise.all(promises);
+  }
+
+  unload() {
+    this._variables.forEach((variable) => {
+      if ( typeof(variable.unload) === 'function' ) {
+        variable.unload();
+      }
     });
+
+    this._variables = [];
   }
 };
 

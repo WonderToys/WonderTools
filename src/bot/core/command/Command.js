@@ -118,27 +118,6 @@ class Command {
   //  Private
   // -----
 
-  _loadConfig() {
-    return new Promise((resolve, reject) => {
-      CommandConfig.findOne({ command: this.command })
-        .then((config) => {
-          if ( config != null ) {
-            this._config = config;
-            resolve(this._config);
-          }
-          else {
-            const newConfig = Object.assign({ command: this.command }, this.defaultConfig());
-            CommandConfig.create(newConfig)
-              .save()
-              .then((config) => {
-                this._config = config;
-                resolve(this._config);
-              });
-          }
-        });
-    });
-  }
-
   _trackCooldown(username) {
     const now = moment().valueOf();
 
@@ -168,6 +147,24 @@ class Command {
   //  Public
   // -----
 
+  loadConfig() {
+    return CommandConfig.findOne({ command: this.command })
+      .then((config) => {
+        if ( config != null ) {
+          this._config = config;
+          return this._config;
+        }
+        else {
+          const newConfig = Object.assign({ command: this.command }, this.defaultConfig());
+          return CommandConfig.create(newConfig)
+            .save()
+            .then((config) => {
+              this._config = config;
+            });
+        }
+      });
+  }
+  
   save() {
     return this.config.save();
   }

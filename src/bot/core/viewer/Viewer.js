@@ -32,6 +32,11 @@ class Viewer extends Persistable {
       default: false
     };
 
+    this.isActive = {
+      type: Boolean,
+      default: false
+    };
+
     this.lastSeen = {
       type: Date,
       default: null

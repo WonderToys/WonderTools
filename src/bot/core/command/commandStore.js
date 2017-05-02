@@ -23,41 +23,33 @@ class CommandStore {
   // -----
 
   _register(command) {
-    return new Promise((resolve, reject) => {
-      if ( command == null || (command.command == null || command.command.length === 0) ) {
-        reject(new Error('Command not provided!'));
-      }
+    if ( command == null || (command.command == null || command.command.length === 0) ) {
+      throw new Error('Command not provided!');
+    }
 
-      if ( typeof(command.action) !== 'function' ) {
-        reject( new Error('The command must have an action!'));
-      }
+    if ( typeof(command.action) !== 'function' ) {
+      throw new Error('The command must have an action!');
+    }
 
-      if ( this._commands.find(c => c.command === command.command) != null ) {
-        reject(new Error(`A ${ command.command } command already exists!`));
-      }
+    let messageTypes = command.messageTypes;
+    if ( !Array.isArray(messageTypes) || messageTypes.length === 0 ) {
+      messageTypes = [ 'chat' ];
+    }
 
-      let messageTypes = command.messageTypes;
-      if ( !Array.isArray(messageTypes) || messageTypes.length === 0 ) {
-        messageTypes = [ 'chat' ];
-      }
+    return command.loadConfig()
+      .then(() => {
+        // Register command
+        this._commands.push(command);
 
-      command._loadConfig()
-        .then(() => {
-          // Register command
-          this._commands.push(command);
+        // Register command by message type
+        messageTypes.forEach((mt) => {
+          if ( this._commandsByType[mt] == null ) {
+            this._commandsByType[mt] = {};
+          }
 
-          // Register command by message type
-          messageTypes.forEach((mt) => {
-            if ( this._commandsByType[mt] == null ) {
-              this._commandsByType[mt] = {};
-            }
-
-            this._commandsByType[mt][command.command] = command;
-          });
-
-          resolve();
+          this._commandsByType[mt][command.command] = command;
         });
-    });
+      });
   }
 
   // -----
@@ -75,18 +67,25 @@ class CommandStore {
     this._commands = [];
     this._commandsByType = {};
 
-    return new Promise((resolve, reject) => {
-      const promises = [];
+    const promises = [];
 
-      // Add built-in commands
-      promises.concat(builtInCommands.map((cmd) => {
-        return this._register(cmd);
-      }));
+    // Add built-in commands
+    promises.concat(builtInCommands.map((cmd) => {
+      return this._register(cmd);
+    }));
 
-      Promise.all(promises)
-        .then(resolve)
-        .catch(reject);
+    return Promise.all(promises);
+  }
+
+  unload() {
+    this._commands.forEach((cmd) => {
+      if ( typeof(cmd.unload) === 'function' ) {
+        cmd.unload();
+      }
     });
+
+    this._commands = [];
+    this._commandsByType = {};
   }
 };
 

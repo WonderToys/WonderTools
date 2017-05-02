@@ -186,7 +186,7 @@ class Client {
       .then((result) => {
         return executeCommand(parsed.command, request, reply);
       })
-      .then(() => moduleStore.notify('postCommand', request));
+      .then(() => moduleStore.notify('postCommand', request))
       .catch((result) => {
         if ( Array.isArray(result) ) {
           result.forEach(res => reply(res));
@@ -221,7 +221,10 @@ class Client {
   disconnect() {
     return this._ircClient
       .disconnect()
-      .then(() => viewerStore.unload());
+      .then(() => viewerStore.unload())
+      .then(() => commandStore.unload())
+      .then(() => variableStore.unload())
+      .then(() => moduleStore.unload());
   } //- disconnect()
 
   // -----

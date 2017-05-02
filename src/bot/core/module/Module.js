@@ -7,7 +7,7 @@ class Module {
   }
 
   // -----
-  //  Public
+  //  Properties
   // -----
 
   get commands() {

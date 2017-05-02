@@ -1,14 +1,15 @@
 import path from 'path';
 import { remote } from 'electron';
 import glob from 'glob';
-import fs from 'fs';
-import vm from 'vm';
+import NodeModule from 'module';
 
-import providerStore from './providerStore';
+import commandStore from '../command/commandStore';
+import variableStore from '../variable/variableStore';
 
 import Module from './Module';
 import Viewer from '../viewer/Viewer';
 import Variable from '../variable/Variable';
+import Persistable from '../../Persistable';
 import { Command } from '../command/Command';
 
 // -----
@@ -19,22 +20,18 @@ const WT_STANDARD_REGEX = /^(\$\w+\b)/i;
 const WT_PROVIDER_REGEX = /^(wondertools\/)/i;
 
 // -----
-//  Patch Require
+//  Monkeypatch
 // -----
 
-// patchedRequire()
-const patchedRequire = function patchedRequire(module) {
-  if ( WT_STANDARD_REGEX.test(module) ) {
-    return providerStore.get(module);
+const originalResolve = NodeModule._resolveFilename;
+
+NodeModule._resolveFilename = function patchedResolveFilename(request, parent, isMain) {
+  if ( WT_STANDARD_REGEX.test(request) || WT_PROVIDER_REGEX.test(request) === true) {
+    return request;
   }
 
-  if ( WT_PROVIDER_REGEX.test(module) === true ) {
-    module = module.replace(WT_PROVIDER_REGEX, '');
-    return providerStore.get(module);
-  }
-
-  return require(module);
-}; //- patchedRequire()
+  return originalResolve(request, parent, isMain);
+};
 
 // -----
 //  ModuleStore
@@ -52,42 +49,22 @@ class ModuleStore {
   // -----
 
   _registerStandardProviders() {
-    providerStore.register('$Module', Module);
-    providerStore.register('$Viewer', Viewer);
-    providerStore.register('$Variable', Variable);
-    providerStore.register('$Command', Command);
+    NodeModule._cache['$Module'] = { exports: Module };
+    NodeModule._cache['$Viewer'] = { exports: Viewer };
+    NodeModule._cache['$Variable'] = { exports: Variable };
+    NodeModule._cache['$Command'] = { exports: Command };
+    NodeModule._cache['$Persistable'] = { exports: Persistable };
   }
 
   _loadFileWithPatchedRequire(filename) {
     return new Promise((resolve, reject) => {
-      fs.readFile(filename, 'utf8', (err, data) => {
-        if ( err != null ) return reject(err);
-
-        const script = `
-          (function(require, __dirname, __filename) { 
-            ${data} 
-
-            if ( module.exports == null ) {
-              return new Error('No module.exports found!');
-            }
-
-            return module.exports;
-          })`;
-
-        try {
-          const res = vm.runInThisContext(script, { filename });
-          const module = res(patchedRequire, path.dirname(filename), filename);
-
-          if ( module instanceof Error ) {
-            return reject(module);
-          }
-
-          resolve(module);
-        }
-        catch ( err ) {
-          reject(err);
-        }
-      });
+      try {
+        const module = require(filename);
+        resolve(module);
+      }
+      catch ( err ) {
+        reject(err);
+      }
     });
   }
 
@@ -96,11 +73,18 @@ class ModuleStore {
 
     return this._loadFileWithPatchedRequire(entryPath)
       .then((module) => {
-        module._moduleName = manifest.name;
-        module._moduleRoot = moduleRoot;
+        if ( !(module.prototype instanceof Module) ) {
+          throw new Error(`${ manifest.name } is not a Module!`);
+        }
 
-        this._modules[manifest.name] = module;
-        return this._loadProviders(module);
+        const modInstance = new module();
+        modInstance._moduleName = manifest.name;
+        modInstance._moduleRoot = moduleRoot;
+
+        this._modules[manifest.name] = modInstance;
+        return this._loadProviders(modInstance)
+          .then(() => this._loadCommands(modInstance))
+          .then(() => this._loadVariables(modInstance));
       });
   }
 
@@ -110,19 +94,57 @@ class ModuleStore {
 
     const promises = Object.keys(providers)
       .map((key) => {
-        const providerPath = path.normalize(path.join(moduleRoot, providers[key]));
+        if ( typeof(providers[key]) === 'string' ) {
+          const providerPath = path.normalize(path.join(moduleRoot, providers[key]));
 
-        return this._loadFileWithPatchedRequire(providerPath)
-          .then((provider) => {
-            provider._providerName = key;
-            provider._providerPath = providerPath;
+          return this._loadFileWithPatchedRequire(providerPath)
+            .then((provider) => {
+              provider._providerName = key;
+              provider._providerPath = providerPath;
 
-            providerStore.register(key, provider);
-            return provider;
-          });
+              NodeModule._cache[`wondertools/${ key }`] = { exports: provider };
+              return provider;
+            });
+        }
+
+        const provider = providers[key];
+        provider._providerName = key;
+
+        NodeModule._cache[`wondertools/${ key }`] = { exports: provider };
+        return Promise.resolve(provider);
       });
 
     return Promise.all(promises);
+  }
+
+  _loadCommands(module) {
+    const commands = module.commands || [];
+    const moduleRoot = module._moduleRoot;
+
+    const promises = commands.map((command) => {
+      if ( command instanceof Command ) {
+        return commandStore._register(command);
+      }
+
+      return commandStore._register(new command());
+    });
+
+    return Promise.all(promises);
+  }
+
+  _loadVariables(module) {
+    const variables = module.variables || [];
+    const moduleRoot = module._moduleRoot;
+
+    const promises = variables.map((variable) => {
+      if ( variable instanceof Variable ) {
+        return variableStore._register(variable);
+      }
+
+      return variableStore._register(new variable());
+    });
+
+    return Promise.all(promises); 
   }
 
   // -----
@@ -130,6 +152,8 @@ class ModuleStore {
   // -----
 
   load() {
+    this._modules = {};
+    
     const modulePath = path.join(remote.app.getAppPath(), 'modules');
 
     return new Promise((resolve, reject) => {
@@ -149,6 +173,18 @@ class ModuleStore {
           .catch(reject);
       });
     });
+  }
+
+  unload() {
+    const keys = Object.keys(this._modules);
+    keys.forEach((key) => {
+      const module = this._modules[key];
+      if ( typeof(module.unload) === 'function' ) {
+        module.unload();
+      }
+    });
+
+    this._modules = {};
   }
 
   notify(event, args) {

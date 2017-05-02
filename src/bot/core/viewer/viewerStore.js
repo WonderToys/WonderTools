@@ -35,7 +35,7 @@ class ViewerStore {
     return Promise.all(promises);
   }
 
-  _updateTimes(viewer, chatted) {
+  _updateTimes(viewer, chatted, save) {
     const now = new Date();
     if ( viewer.lastSeen != null ) {
       const end = moment(viewer.lastSeen);
@@ -45,11 +45,17 @@ class ViewerStore {
     }
 
     viewer.lastSeen = now;
+
     if ( chatted === true ) {
       viewer.lastChatted = now;
     }
 
-    return viewer.save();
+    if ( save === true ) {
+      viewer.isActive = true;
+      return viewer.save();
+    }
+
+    return viewer;
   }
 
   _updateUserId(viewer) {
@@ -126,7 +132,7 @@ class ViewerStore {
     return twitch.getViewers(_channel, true)
       .then(vs => this._findOrCreateUsers(vs))
       .then((vs) => {
-        const promises = vs.map(v => this._updateTimes(v, false));
+        const promises = vs.map(v => this._updateTimes(v, false, true));
         return Promise.all(promises)
       })
       .then((vs) => {
@@ -149,6 +155,8 @@ class ViewerStore {
         if ( isActive === true ) {
           this._liveViewers.push(viewer);
         }
+
+        viewer.isActive = isActive;
 
         return viewer.save();
       });
