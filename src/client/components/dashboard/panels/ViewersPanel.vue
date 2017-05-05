@@ -31,13 +31,11 @@ div.gallery-curve-wrapper
   Style
 -->
 <style scoped lang="less">
-  div.content {
-    padding: 1rem;
-
-    tr.bold {
-      font-weight: 500;
-    }
+div.content {
+  tr.bold {
+    font-weight: 500;
   }
+}
 </style>
 
 <!--

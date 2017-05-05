@@ -14,37 +14,9 @@ import { resolve as resolveVariable } from './resolvers/variableResolver';
 //  Client
 // -----
 class Client {
-  constructor(config) {
-    this._botName = config.botName;
-    this._streamerName = config.streamerName;
-
-    this._accessToken = config.botAccessToken;
-    this._refreshToken = config.botRefreshToken;
-
-    this._channel = `#${ this._streamerName }`;
-    this._channelId = config.streamerUserId;
-    
-    this._channel = '#slevin_4';
-    this._channelId = '109589541';
-
-    // this._channel = '#pookajutsu';
-    // this._channelId = '29181653';
-
+  constructor() {
     this._isConnecting = false;
-
-    this._ircClient = new tmi.client({
-      options: {
-        debug: true,
-      },
-      connection: {
-        reconnect: true,
-      },
-      identity: {
-        username: this._botName,
-        password: `oauth:${ this._accessToken }`
-      },
-      channels: [ this._channel ]
-    });
+    this._isLoaded = false;
   } //- constructor()
 
   // -----
@@ -143,6 +115,16 @@ class Client {
     });
   }; //- _setupListeners()
 
+  // _removeListeners()
+  _removeListeners() {
+    const client = this._ircClient;
+    client.removeAllListeners('join');
+    client.removeAllListeners('part');
+    client.removeAllListeners('message');
+
+    return Promise.resolve();
+  } //- _removeListeners()
+
   // _validateCommand()
   _validateCommand(request) {
     return moduleStore.notify('validateCommand', request)
@@ -201,39 +183,85 @@ class Client {
   //  Public
   // -----
 
-  connect() {
-    this._isConnecting = true;
+  load() {
+    if ( this._isLoaded === true ) {
+      return Promise.resolve();
+    }
 
     return commandStore.load()
       .then(() => variableStore.load())
+      .then(() => moduleStore.load())
+      .then(() => this._isLoaded = true)
+      .catch((e) => { 
+        throw e; 
+      });
+  }
+
+  setConfig(config) {
+    this._botName = config.botName;
+    this._streamerName = config.streamerName;
+
+    this._accessToken = config.botAccessToken;
+    this._refreshToken = config.botRefreshToken;
+
+    this._channel = `#${ this._streamerName }`;
+    this._channelId = config.streamerUserId;
+    
+    // this._channel = '#slevin_4';
+    // this._channelId = '109589541';
+
+    // this._channel = '#pookajutsu';
+    // this._channelId = '29181653';
+
+    // this._channel = '#ampff';
+    // this._channelId = '84620624';
+
+    this._isConnecting = false;
+
+    this._ircClient = new tmi.client({
+      options: {
+        debug: true,
+      },
+      connection: {
+        reconnect: true,
+      },
+      identity: {
+        username: this._botName,
+        password: `oauth:${ this._accessToken }`
+      },
+      channels: [ this._channel ]
+    });
+
+    return Promise.resolve(this);
+  }
+
+  connect(config) {
+    this._isConnecting = true;
+
+    return this.setConfig(config)
+      .then(() => this.load())
       .then(() => this._setupListeners())
       .then(() => this._ircClient.connect())
       .then(() => viewerStore.load(this._channel, this._channelId))
-      .then(() => moduleStore.load())
-      .then(() => {
-        this._isConnecting = false;
-      })
-      .catch((e) => { 
-        throw e; 
+      .then(() => this._isConnecting = false)
+      .catch((e) => {
+        throw e;
       });
   } //- connect()
 
   disconnect() {
-    return this._ircClient
-      .disconnect()
-      .then(() => viewerStore.unload())
-      .then(() => commandStore.unload())
-      .then(() => variableStore.unload())
-      .then(() => moduleStore.unload());
+    return viewerStore.unload()
+      .then(() => this._removeListeners())
+      .then(() => this._ircClient.disconnect());
   } //- disconnect()
 
   // -----
   //  Static
   // -----
 
-  static getClient(config) {
+  static getClient() {
     if ( global.WT_CLIENT == null ) {
-      global.WT_CLIENT = new Client(config);
+      global.WT_CLIENT = new Client();
     }
 
     return global.WT_CLIENT;

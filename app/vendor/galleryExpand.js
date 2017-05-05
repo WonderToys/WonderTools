@@ -1,11 +1,3 @@
-/*!
- * Gallery v1.0.1
- * Materialize theme
- * http://materializecss.com/themes.html
- * Personal Use License
- * by Alan Chang
- */
-
 (function ($) {
 
 

@@ -1,4 +1,5 @@
 import Persistable from '../../Persistable';
+import * as twitch from '../../../api/twitch';
 
 // -----
 //  Viewer
@@ -93,7 +94,6 @@ class Viewer extends Persistable {
 
     return Promise.resolve(this);
   }
-
 
   // -----
   //  Static

@@ -16,8 +16,7 @@ import { Command } from '../command/Command';
 //  Fields
 // -----
 
-const WT_STANDARD_REGEX = /^(\$\w+\b)/i;
-const WT_PROVIDER_REGEX = /^(wondertools\/)/i;
+const WT_PROVIDER_REGEX = /^(wtools\/)/i;
 
 // -----
 //  Monkeypatch
@@ -26,7 +25,7 @@ const WT_PROVIDER_REGEX = /^(wondertools\/)/i;
 const originalResolve = NodeModule._resolveFilename;
 
 NodeModule._resolveFilename = function patchedResolveFilename(request, parent, isMain) {
-  if ( WT_STANDARD_REGEX.test(request) || WT_PROVIDER_REGEX.test(request) === true) {
+  if ( WT_PROVIDER_REGEX.test(request) === true) {
     return request;
   }
 
@@ -49,11 +48,11 @@ class ModuleStore {
   // -----
 
   _registerStandardProviders() {
-    NodeModule._cache['$Module'] = { exports: Module };
-    NodeModule._cache['$Viewer'] = { exports: Viewer };
-    NodeModule._cache['$Variable'] = { exports: Variable };
-    NodeModule._cache['$Command'] = { exports: Command };
-    NodeModule._cache['$Persistable'] = { exports: Persistable };
+    NodeModule._cache['wtools/Module'] = { exports: Module };
+    NodeModule._cache['wtools/Viewer'] = { exports: Viewer };
+    NodeModule._cache['wtools/Variable'] = { exports: Variable };
+    NodeModule._cache['wtools/Command'] = { exports: Command };
+    NodeModule._cache['wtools/Persistable'] = { exports: Persistable };
   }
 
   _loadFileWithPatchedRequire(filename) {
@@ -78,80 +77,120 @@ class ModuleStore {
         }
 
         const modInstance = new module();
+
         modInstance._moduleName = manifest.name;
         modInstance._moduleRoot = moduleRoot;
+        modInstance._commands = [];
+        modInstance._variables = [];
+        modInstance._providers = [];
 
         this._modules[manifest.name] = modInstance;
-        return this._loadProviders(modInstance)
+        return this._loadProviders(modInstance, manifest.name)
           .then(() => this._loadCommands(modInstance))
           .then(() => this._loadVariables(modInstance));
       });
   }
 
-  _loadProviders(module) {
-    const providers = module.providers || {};
+  _loadProviders(module, moduleName) {
     const moduleRoot = module._moduleRoot;
+    const searchGlob = path.join(moduleRoot, 'providers', '**', '*.js');
 
-    const promises = Object.keys(providers)
-      .map((key) => {
-        if ( typeof(providers[key]) === 'string' ) {
-          const providerPath = path.normalize(path.join(moduleRoot, providers[key]));
+    return new Promise((resolve, reject) => {
+      glob(searchGlob, (err, files) => {
+        if ( err != null ) throw err;
 
-          return this._loadFileWithPatchedRequire(providerPath)
-            .then((provider) => {
-              provider._providerName = key;
-              provider._providerPath = providerPath;
+        const promises = files.map((file) => {
+          const providerName = path.basename(file, '.js');
+          const cacheKey = `wtools/${ moduleName }/${ providerName }`;
 
-              NodeModule._cache[`wondertools/${ key }`] = { exports: provider };
-              return provider;
-            });
-        }
+          try {
+            const provider = require(file);
+            module._providers.push(provider);
+            NodeModule._cache[cacheKey] = { exports: provider };
+            
+            return provider;
+          }
+          catch ( e ) {
+            throw e;
+          }
+        });
 
-        const provider = providers[key];
-        provider._providerName = key;
-
-        NodeModule._cache[`wondertools/${ key }`] = { exports: provider };
-        return Promise.resolve(provider);
+        Promise.all(promises)
+          .then(resolve)
+          .catch(reject);
       });
-
-    return Promise.all(promises);
+    });
   }
 
   _loadCommands(module) {
-    const commands = module.commands || [];
     const moduleRoot = module._moduleRoot;
+    const searchGlob = path.join(moduleRoot, 'commands', '**', '*Command.js');
 
-    const promises = commands.map((command) => {
-      if ( command instanceof Command ) {
-        return commandStore._register(command);
-      }
+    return new Promise((resolve, reject) => {
+      glob(searchGlob, (err, files) => {
+        if ( err != null ) throw err;
 
-      return commandStore._register(new command());
+        const promises = files.map((file) => {
+          try {
+            const cmdClass = require(file);
+            if ( !(cmdClass.prototype instanceof Command) ) {
+              throw new Error(`${ file } does not export a Command!`);
+            }
+
+            const cmdInstance = new cmdClass();
+            module._commands.push(cmdInstance);
+
+            return commandStore._register(cmdInstance);
+          }
+          catch ( e ) {
+            throw e;
+          }
+        });
+
+        Promise.all(promises)
+          .then(resolve)
+          .catch(reject);
+      });
     });
-
-    return Promise.all(promises);
   }
 
   _loadVariables(module) {
-    const variables = module.variables || [];
     const moduleRoot = module._moduleRoot;
+    const searchGlob = path.join(moduleRoot, 'variables', '**', '*Variable.js');
 
-    const promises = variables.map((variable) => {
-      if ( variable instanceof Variable ) {
-        return variableStore._register(variable);
-      }
+    return new Promise((resolve, reject) => {
+      glob(searchGlob, (err, files) => {
+        if ( err != null ) throw err;
 
-      return variableStore._register(new variable());
+        const promises = files.map((file) => {
+          try {
+            const varClass = require(file);
+            if ( !(varClass.prototype instanceof Variable) ) {
+              throw new Error(`${ file } does not export a Variable!`);
+            }
+
+            const varInstance = new varClass();
+            module._variables.push(varInstance);
+
+            return variableStore._register(varInstance);
+          }
+          catch ( e ) {
+            throw e;
+          }
+        });
+
+        Promise.all(promises)
+          .then(resolve)
+          .catch(reject);
+      });
     });
-
-    return Promise.all(promises); 
   }
 
   // -----
   //  Public
   // -----
 
-  load() {
+  load(force) {
     this._modules = {};
     
     const modulePath = path.join(remote.app.getAppPath(), 'modules');
@@ -176,21 +215,19 @@ class ModuleStore {
   }
 
   unload() {
-    const keys = Object.keys(this._modules);
-    keys.forEach((key) => {
-      const module = this._modules[key];
-      if ( typeof(module.unload) === 'function' ) {
-        module.unload();
-      }
-    });
+    Object.values(this._modules)
+      .forEach((module) => {
+        if ( typeof(module.unload) === 'function' ) {
+          module.unload();
+        }
+      });
 
     this._modules = {};
   }
 
   notify(event, args) {
-    const promises = Object.keys(this._modules)
-      .map((key) => {
-        const module = this._modules[key];
+    const promises = Object.values(this._modules)
+      .map((module) => {
         if ( typeof(module[event]) === 'function' ) {
           return module[event](args);
         }

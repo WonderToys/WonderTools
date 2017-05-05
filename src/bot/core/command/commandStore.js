@@ -15,7 +15,6 @@ const PARAM_NAME_REGEX = /\w+/g;
 class CommandStore {
   constructor() {
     this._commands = [];
-    this._commandsByType = {};
   }
 
   // -----
@@ -31,24 +30,10 @@ class CommandStore {
       throw new Error('The command must have an action!');
     }
 
-    let messageTypes = command.messageTypes;
-    if ( !Array.isArray(messageTypes) || messageTypes.length === 0 ) {
-      messageTypes = [ 'chat' ];
-    }
-
     return command.loadConfig()
       .then(() => {
-        // Register command
-        this._commands.push(command);
-
-        // Register command by message type
-        messageTypes.forEach((mt) => {
-          if ( this._commandsByType[mt] == null ) {
-            this._commandsByType[mt] = {};
-          }
-
-          this._commandsByType[mt][command.command] = command;
-        });
+        this._commands.push(command)
+        return command;
       });
   }
 
@@ -57,15 +42,13 @@ class CommandStore {
   // -----
 
   getOne(command, messageType) {
-    const cmds = this._commandsByType[messageType];
-    if ( cmds != null ) {
-      return cmds[command];
-    }
+    return this._commands.find((cmd) => {
+      return cmd.messageTypes.some(t => t.toLowerCase() === messageType.toLowerCase()) && cmd.command === command;
+    });
   }
 
   load() {
     this._commands = [];
-    this._commandsByType = {};
 
     const promises = [];
 
@@ -85,7 +68,6 @@ class CommandStore {
     });
 
     this._commands = [];
-    this._commandsByType = {};
   }
 };
 

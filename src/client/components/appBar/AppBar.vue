@@ -91,8 +91,8 @@ export default {
       }
       else {
         this.connecting = true;
-        Client.getClient(this.config)
-          .connect()
+        Client.getClient()
+          .connect(this.config)
           .then(() => {
             this.connecting = false;
             this.connected = true;

@@ -55,7 +55,21 @@ class CommandConfig extends Persistable {
       type: Boolean,
       default: true
     };
+  }
 
+  // -----
+  //  Hooks
+  // -----
+  preSave() {
+    const messageTypes = this.messageTypes;
+    if ( typeof(messageTypes) === 'string' ) {
+      this.messageTypes = [ this.messageTypes ];
+    }
+    else if ( !Array.isArray(messageTypes) ) {
+      this.messageTypes = [ 'chat' ];
+    }
+
+    return Promise.resolve(this);
   }
 };
 

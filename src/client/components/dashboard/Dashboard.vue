@@ -5,6 +5,9 @@
 div.gallery.row
   div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter
     viewers-panel
+
+  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(v-for="panel in panels", :data-panel-name="panel.name")
+    component(:is="panel", v-for="panel in panels")
 </template>
 
 <!--
@@ -18,32 +21,42 @@ div.gallery.row
   Script
 -->
 <script>
+import { loadPanels } from '../panelLoader/panelLoader';
+
 import ViewersPanel from './panels/ViewersPanel.vue';
 
 export default {
   components: {
     ViewersPanel
   },
-  updated() {
-    $('.gallery-expand').galleryExpand({
-      onShow($e) {
-        $e.find('ul.tabs').tabs();
-      }
-    });
+  data() {
+    return {
+      panels: []
+    };
+  },
+  methods: {
+    loadPanels
   },
   mounted() {
-    var $masonry = $('.gallery');
-    $masonry.masonry({
-      itemSelector: '.gallery-filter',
-      columnWidth: '.gallery-filter',
-      transitionDuration: 0
-    });
+    this.loadPanels()
+      .then((panels) => {
+        this.panels = panels;
 
-    $('.gallery-expand').galleryExpand({
-      onShow($e) {
-        $e.find('ul.tabs').tabs();
-      }
-    });
+        process.nextTick(() => {
+          var $masonry = $('.gallery');
+          $masonry.masonry({
+            itemSelector: '.gallery-filter',
+            columnWidth: '.gallery-filter',
+            transitionDuration: 0
+          });
+
+          $('.gallery-expand').galleryExpand({
+            onShow($e) {
+              $e.find('ul.tabs').tabs();
+            }
+          });
+        });
+      });
   }
 }
 </script>

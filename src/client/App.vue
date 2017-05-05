@@ -13,14 +13,7 @@ div.app-container
   Style
 -->
 <style lang="less">
-body {
-  overflow-y: auto;
-  background-color: #f4f4f4;
-}
-
-#main {
-  margin-bottom: 64px;
-}
+@import 'app';
 </style>
 
 <!-- 

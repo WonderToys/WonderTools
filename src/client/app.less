@@ -1,0 +1,48 @@
+@import 'variables';
+
+body {
+  overflow-y: auto;
+  background-color: #f4f4f4;
+}
+
+#main {
+  margin-bottom: 64px;
+}
+
+// -----
+//  Forms
+// -----
+
+/* label focus color */
+.input-field input[type]:focus + label {
+  color: @forms-blue;
+}
+
+/* label underline focus color */
+.input-field input[type]:focus {
+  border-bottom-color: @forms-blue;
+}
+
+// -----
+//  Tabs
+// -----
+
+.tabs .indicator { 
+  background-color: @orange; 
+}
+
+.tabs .tab a.active {
+  color: @orange;
+}
+
+.tabs .tab a:hover {
+  color: fade(@orange, 90%);
+}
+
+.tabs .tab a {
+  color: fade(@orange, 80%);
+}
+
+.tab-content {
+  margin-top: 0.75rem;
+}
