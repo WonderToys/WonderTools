@@ -3,11 +3,11 @@
 -->
 <template lang="jade">
 div.gallery.row
-  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter
-    viewers-panel
+  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$ViewersPanel")
+    viewers-panel(:is-active="isPanelActive('$ViewersPanel')")
 
-  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(v-for="panel in panels", :data-panel-name="panel.name")
-    component(:is="panel", v-for="panel in panels")
+  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(v-for="panel in panels", :data-panel-name="panel")
+    component(:is="panel", :is-active="isPanelActive(panel)")
 </template>
 
 <!--
@@ -31,19 +31,25 @@ export default {
   },
   data() {
     return {
-      panels: []
+      panels: [],
+      activePanel: ''
     };
   },
   methods: {
-    loadPanels
+    loadPanels,
+    isPanelActive(panel) {
+      return this.activePanel === panel;
+    }
   },
   mounted() {
     this.loadPanels()
       .then((panels) => {
         this.panels = panels;
 
-        process.nextTick(() => {
+        this.$nextTick(() => {
+          const that = this;
           var $masonry = $('.gallery');
+          
           $masonry.masonry({
             itemSelector: '.gallery-filter',
             columnWidth: '.gallery-filter',
@@ -52,7 +58,11 @@ export default {
 
           $('.gallery-expand').galleryExpand({
             onShow($e) {
+              that.activePanel = $e.attr('data-panel-name');
               $e.find('ul.tabs').tabs();
+            },
+            onHide($e) {
+              that.activePanel = '';
             }
           });
         });

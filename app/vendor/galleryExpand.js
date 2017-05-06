@@ -501,9 +501,18 @@
               });
 
               // Swap scrollbars if needed
-              if (bodyScrolls) {
+              if ( bodyScrolls ) {
+                // if ( $curveWrapper.find('.gallery-body').outerHeight() > $(window).height() ) {
+                  navbar.css('right', '1.1rem');
+                  overlay.css('right', '1.1rem');
+                // }
+                // else {
+                //   navbar.css('right', '0px');
+                //   overlay.css('right', '0px');
+                // }
+
                 $('body').css('overflow', 'hidden');
-                placeholder.css('overflowY', 'auto');
+                placeholder.css('overflowY', 'scroll');
               }
 
               // Enable scrolling
@@ -718,6 +727,10 @@
                 $('.gallery').masonry('layout');
               }
 
+              // Execute callback
+              if (typeof(options.onHide) === "function") {
+                options.onHide.call(this, origin);
+              }
             }, options.outDuration);
 
           }, 0);

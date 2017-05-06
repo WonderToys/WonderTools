@@ -84,15 +84,5 @@ export const execute = function execute(command, request, reply) {
     }
   }
 
-  result.then((res) => {
-    if ( res === false ) return;
-
-    if ( command.pointCost != null && command.pointCost > 0 ) {
-      const points = request.viewer.points;
-      points.remove(command.pointCost);
-    }
-  })
-  .catch((error) => {
-    console.error(error);
-  });
+  return result;
 }; //- execute()

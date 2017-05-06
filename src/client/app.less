@@ -19,8 +19,32 @@ body {
 }
 
 /* label underline focus color */
-.input-field input[type]:focus {
-  border-bottom-color: @forms-blue;
+input[type]:focus {
+  border-bottom-color: @forms-blue !important;
+}
+
+[type="checkbox"] {
+  + label {
+    color: #444444 !important;
+  }
+
+  &:indeterminate + label:before {
+    border-right-color: @forms-blue;
+  }
+
+  &.filled-in:checked + label:after {
+    background-color: @forms-blue;
+    border-color: @forms-blue;
+  }
+
+  &:checked + label {
+    color: @forms-blue !important;
+  }
+}
+
+.dropdown-content li > a, 
+.dropdown-content li > span {
+  color: @forms-blue;
 }
 
 // -----
@@ -28,19 +52,19 @@ body {
 // -----
 
 .tabs .indicator { 
-  background-color: @orange; 
+  background-color: @purple; 
 }
 
 .tabs .tab a.active {
-  color: @orange;
+  color: @purple;
 }
 
 .tabs .tab a:hover {
-  color: fade(@orange, 90%);
+  color: fade(@purple, 90%);
 }
 
 .tabs .tab a {
-  color: fade(@orange, 80%);
+  color: fade(@purple, 75%);
 }
 
 .tab-content {

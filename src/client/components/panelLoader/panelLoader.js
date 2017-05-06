@@ -7,6 +7,8 @@ import glob from 'glob';
 import moduleStore from '../../../bot/core/module/moduleStore';
 import { getPanelTemplate } from './emptyPanel';
 
+import CommandEditor from '../commandEditor/CommandEditor.vue';
+
 // -----
 //  Helpers
 // -----
@@ -14,12 +16,17 @@ import { getPanelTemplate } from './emptyPanel';
 // getComponentMixin()
 const getComponentMixin = function getComponentMixin(panel) {
   return {
+    components: {
+      CommandEditor
+    },
+    props: [ 'isActive' ],
     data() {
       let data = {
         title: panel.panelName,
         description: `Configuration options for ${ panel.panelName }`,
         commands: panel.module._commands,
-        variables: panel.module._variables
+        variables: panel.module._variables,
+        extensions: getExtensions(`${ panel.module._moduleName }/${ panel.panelName }`)
       };
 
       if ( typeof(this.__panelData) === 'function' ) {
@@ -27,6 +34,15 @@ const getComponentMixin = function getComponentMixin(panel) {
       }
 
       return data;
+    },
+    watch: {
+      isActive() {
+        if ( this.isActive !== true ) return;
+
+        if ( typeof(this.__panelMounted) === 'function' ) {
+          this.__panelMounted();
+        }
+      }
     }
   }
 }; //- getComponentMixin()
@@ -38,10 +54,10 @@ const createComponent = function createComponent(panel) {
 
   const componentName = `${ moduleName }${ panel.panelName }`;
 
-  const template = fs.readFileSync(path.join(moduleRoot, 'ui', 'panels', panel.template), 'utf8');
+  const template = fs.readFileSync(path.join(moduleRoot, panel.template), 'utf8');
   const templateString = getPanelTemplate(template);
 
-  const compDef = require(path.join(moduleRoot, 'ui', 'panels', panel.script), 'utf8');
+  const compDef = require(path.join(moduleRoot, panel.script), 'utf8');
 
   // Copy data, if it exists
   if ( typeof(compDef.data) === 'function' ) {
@@ -51,6 +67,9 @@ const createComponent = function createComponent(panel) {
 
     compDef.methods.__panelData = compDef.data;
     delete compDef['data'];
+
+    compDef.methods.__panelMounted = compDef.mounted;
+    delete compDef['mounted'];
   }
 
   compDef.mixins = [ getComponentMixin(panel) ];
@@ -69,21 +88,16 @@ const createComponent = function createComponent(panel) {
 export const loadPanels = function loadPanels() {
   const promises = Object.values(moduleStore._modules)
     .map((module) => {
-      try {
-        const panelConfig = require(path.join(module._moduleRoot, 'ui', 'panels', 'panels.json'));
-        return Object.keys(panelConfig)
-          .map((key) => {
-            const value = panelConfig[key];
+      const panelConfig = module._ui.panels;
+      return Object.keys(panelConfig)
+        .map((key) => {
+          const value = panelConfig[key];
 
-            value.panelName = key;
-            value.module = module;
+          value.panelName = key;
+          value.module = module;
 
-            return value;
-          });
-      }
-      catch ( err ) {
-        throw err;
-      }
+          return value;
+        });
     });
 
   return Promise.all(promises)
@@ -98,3 +112,20 @@ export const loadPanels = function loadPanels() {
       }));
     });
 }; //- loadPanels();
+
+// getExtensions()
+export const getExtensions = function getExtensions(name) {
+  const keys = Object.keys(moduleStore._modules);
+
+  return keys.map((moduleName) => {
+    const module = moduleStore._modules[moduleName];
+    const extensions = module._ui.extensions;
+
+    const found = Object.keys(extensions).filter(e => e === name);
+    if ( found == null ) return [];
+
+    return found.map(key => {
+      return require(path.join(module._moduleRoot, extensions[key]));
+    });
+  }).reduce((acc, item) => acc.concat(item), []);
+}; //- getExtensions()

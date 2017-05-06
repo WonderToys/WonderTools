@@ -24,6 +24,7 @@
     "start": "gulp start"
   },
   "dependencies": {
+    "app-module-path": "^2.2.0",
     "camo": "^0.12.3",
     "electron-oauth2": "github:wondertoys/electron-oauth2",
     "fs-jetpack": "^0.12.0",

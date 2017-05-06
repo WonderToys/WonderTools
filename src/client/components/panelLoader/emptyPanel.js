@@ -9,7 +9,7 @@ export const getPanelTemplate = function getPanelTemplate(templateString) {
       <div class="title-wrapper">
         <h4>{{ title }}</h4>
       </div>
-      <div class="content">
+      <div class="content" v-if="isActive">
         ${ templateString }
       </div>
     </div>

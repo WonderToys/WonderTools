@@ -12,6 +12,8 @@ import Variable from '../variable/Variable';
 import Persistable from '../../Persistable';
 import { Command } from '../command/Command';
 
+import { addPath as addRequirePath } from 'app-module-path';
+
 // -----
 //  Fields
 // -----
@@ -21,6 +23,14 @@ const WT_PROVIDER_REGEX = /^(wtools\/)/i;
 // -----
 //  Monkeypatch
 // -----
+
+if ( process.env === 'production' ) {
+  addRequirePath(path.join(remote.app.getAppPath(), 'resources', 'app.asar', 'app', 'node_modules'));
+  addRequirePath(path.join(remote.app.getAppPath(), 'resources', 'app.asar', 'node_modules'));
+}
+else {
+  addRequirePath(path.join(__dirname, '../', 'node_modules'));
+}
 
 const originalResolve = NodeModule._resolveFilename;
 
@@ -80,110 +90,103 @@ class ModuleStore {
 
         modInstance._moduleName = manifest.name;
         modInstance._moduleRoot = moduleRoot;
+
+        modInstance._ui = manifest.ui || {
+          panels: {},
+          extensions: {}
+        };
+
         modInstance._commands = [];
         modInstance._variables = [];
         modInstance._providers = [];
 
         this._modules[manifest.name] = modInstance;
-        return this._loadProviders(modInstance, manifest.name)
-          .then(() => this._loadCommands(modInstance))
-          .then(() => this._loadVariables(modInstance));
+        return this._loadProviders(modInstance, manifest.providers)
+          .then(() => this._loadCommands(modInstance, manifest.commands))
+          .then(() => this._loadVariables(modInstance, manifest.variables));
       });
   }
 
-  _loadProviders(module, moduleName) {
+  _loadProviders(module, providers) {
     const moduleRoot = module._moduleRoot;
-    const searchGlob = path.join(moduleRoot, 'providers', '**', '*.js');
+    const moduleName = module._moduleName;
 
-    return new Promise((resolve, reject) => {
-      glob(searchGlob, (err, files) => {
-        if ( err != null ) throw err;
+    const promises = providers.map((ppath) => {
+      const providerPath = path.join(moduleRoot, ppath);
+      const providerName = path.basename(ppath, path.extname(ppath));
+      const cacheKey = `wtools/${ moduleName }/${ providerName }`;
 
-        const promises = files.map((file) => {
-          const providerName = path.basename(file, '.js');
-          const cacheKey = `wtools/${ moduleName }/${ providerName }`;
-
-          try {
-            const provider = require(file);
-            module._providers.push(provider);
-            NodeModule._cache[cacheKey] = { exports: provider };
-            
-            return provider;
-          }
-          catch ( e ) {
-            throw e;
-          }
-        });
-
-        Promise.all(promises)
-          .then(resolve)
-          .catch(reject);
-      });
+      try {
+        const provider = require(providerPath);
+        module._providers.push(provider);
+        NodeModule._cache[cacheKey] = { exports: provider };
+        
+        return provider;
+      }
+      catch ( e ) {
+        throw e;
+      }
     });
+
+    return Promise.all(promises);
   }
 
-  _loadCommands(module) {
+  _loadCommands(module, commands) {
     const moduleRoot = module._moduleRoot;
-    const searchGlob = path.join(moduleRoot, 'commands', '**', '*Command.js');
+    const moduleName = module._moduleName;
 
-    return new Promise((resolve, reject) => {
-      glob(searchGlob, (err, files) => {
-        if ( err != null ) throw err;
+    const promises = commands.map((cpath) => {
+      const commandPath = path.join(moduleRoot, cpath);
 
-        const promises = files.map((file) => {
-          try {
-            const cmdClass = require(file);
-            if ( !(cmdClass.prototype instanceof Command) ) {
-              throw new Error(`${ file } does not export a Command!`);
-            }
+      try {
+        const cmdClass = require(commandPath);
+        if ( !(cmdClass.prototype instanceof Command) ) {
+          throw new Error(`${ file } does not export a Command!`);
+        }
 
-            const cmdInstance = new cmdClass();
-            module._commands.push(cmdInstance);
+        const cmdInstance = new cmdClass();
+        cmdInstance._moduleName = moduleName;
+        cmdInstance._commandPath = commandPath;
 
-            return commandStore._register(cmdInstance);
-          }
-          catch ( e ) {
-            throw e;
-          }
-        });
+        module._commands.push(cmdInstance);
 
-        Promise.all(promises)
-          .then(resolve)
-          .catch(reject);
-      });
+        return commandStore._register(cmdInstance);
+      }
+      catch ( e ) {
+        throw e;
+      }
     });
+
+    return Promise.all(promises);
   }
 
-  _loadVariables(module) {
+  _loadVariables(module, variables) {
     const moduleRoot = module._moduleRoot;
-    const searchGlob = path.join(moduleRoot, 'variables', '**', '*Variable.js');
+    const moduleName = module._moduleName;
 
-    return new Promise((resolve, reject) => {
-      glob(searchGlob, (err, files) => {
-        if ( err != null ) throw err;
+    const promises = variables.map((vpath) => {
+      const variablePath = path.join(moduleRoot, vpath);
 
-        const promises = files.map((file) => {
-          try {
-            const varClass = require(file);
-            if ( !(varClass.prototype instanceof Variable) ) {
-              throw new Error(`${ file } does not export a Variable!`);
-            }
+      try {
+        const varClass = require(variablePath);
+        if ( !(varClass.prototype instanceof Variable) ) {
+          throw new Error(`${ file } does not export a Variable!`);
+        }
 
-            const varInstance = new varClass();
-            module._variables.push(varInstance);
+        const varInstance = new varClass();
+        varInstance._moduleName = moduleName;
+        varInstance._variablePath = variablePath;
+        
+        module._variables.push(varInstance);
 
-            return variableStore._register(varInstance);
-          }
-          catch ( e ) {
-            throw e;
-          }
-        });
-
-        Promise.all(promises)
-          .then(resolve)
-          .catch(reject);
-      });
+        return variableStore._register(varInstance);
+      }
+      catch ( e ) {
+        throw e;
+      }
     });
+
+    return Promise.all(promises);
   }
 
   // -----
@@ -193,8 +196,7 @@ class ModuleStore {
   load(force) {
     this._modules = {};
     
-    const modulePath = path.join(remote.app.getAppPath(), 'modules');
-
+    const modulePath = path.join(remote.app.getPath('userData'), 'modules');
     return new Promise((resolve, reject) => {
       glob(`${ modulePath }/**/module.json`, (err, files) => {
         if ( err != null ) {
