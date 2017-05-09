@@ -75,6 +75,7 @@ export const execute = function execute(command, request, reply) {
   }
   
   let result = command.action.call(command, request, reply);
+
   if ( !(result instanceof Promise) ) {
     if ( result instanceof Error ) {
       result = Promise.reject(result);

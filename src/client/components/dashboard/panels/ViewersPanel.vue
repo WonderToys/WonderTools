@@ -2,7 +2,7 @@
   Template
 -->
 <template lang="jade">
-div.gallery-curve-wrapper
+div#viewersPanel.gallery-curve-wrapper
   div.gallery-header
     span Viewers
     p.caption Set regulars, ban and unban, timeout viewers, and see viewer history. 

@@ -33,6 +33,7 @@
     "moment": "^2.18.1",
     "nedb": "^1.8.0",
     "node-uuid": "^1.4.8",
+    "random-js": "^1.0.8",
     "request": "^2.81.0",
     "rollup": "^0.41.4",
     "rollup-plugin-vue": "^2.3.1",

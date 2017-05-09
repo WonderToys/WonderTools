@@ -11,10 +11,7 @@ class CommandConfig extends Persistable {
   constructor() {
     super();
 
-    this.command = {
-      type: String,
-      required: true
-    };
+    this.command = String;
 
     this.isCustom = {
       type: Boolean,
@@ -28,27 +25,34 @@ class CommandConfig extends Persistable {
 
     this.cooldown = {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0,
+      required: true
     };
 
     this.userCooldown = {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0,
+      required: true
     };
 
     this.messageTypes = {
       type: [ String ],
-      default: [ 'chat' ]
+      default: [ 'chat' ],
+      required: true
     };
 
     this.accessLevel = {
       type: Number,
-      default: Viewer.LEVEL_VIEWER
+      default: Viewer.LEVEL_VIEWER,
+      required: true
     };
 
     this.counterType = {
       type: Number,
-      default: Command.COUNTER_NONE
+      default: Command.COUNTER_NONE,
+      required: true
     };
 
     this.isEnabled = {
@@ -60,7 +64,21 @@ class CommandConfig extends Persistable {
   // -----
   //  Hooks
   // -----
+  preValidate() {
+    if ( this.isCustom === true && (this.actionString == null || this.actionString.length === 0) ) {
+      return Promise.reject(false);
+    }
+
+    return Promise.resolve(this);
+  }
+
   preSave() {
+    // command
+    if ( !this.command.startsWith('!') ) {
+      this.command = `!${ this.command }`;
+    }
+    
+    // messageTypes
     const messageTypes = this.messageTypes;
     if ( typeof(messageTypes) === 'string' ) {
       this.messageTypes = [ this.messageTypes ];
@@ -78,9 +96,9 @@ class CommandConfig extends Persistable {
 // -----
 
 class Command {
-  constructor() {
+  constructor(config) {
     this._cooldownTimers = {};
-    this._config = {};
+    this._config = config || {};
   }
 
   // -----
@@ -119,13 +137,20 @@ class Command {
     return this.config.userCooldown;
   }
 
-  get metadata() {
-    const meta = this._config.metadata;
-    return meta || {};
-  }
-
   get counterType() {
     return this.config.counterType;
+  }
+
+  get actionString() {
+    if ( this.isCustom === true ) {
+      return this.config.actionString;
+    }
+
+    return null;
+  }
+
+  get metadata() {
+    return this.config.metadata;
   }
 
   // -----
@@ -151,7 +176,7 @@ class Command {
       this.metadata.counter = 0;
     }
 
-    this.metadata.counter += increase;
+    this.metadata.counter++;
     this.save();
 
     return this.metadata.counter;
@@ -261,4 +286,4 @@ class Command {
 };
 
 // Exports
-export { Command };
+export { Command, CommandConfig };

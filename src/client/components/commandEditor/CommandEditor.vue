@@ -2,43 +2,55 @@
   Template
 -->
 <template lang="jade">
-div.command-editor(wait-for="command", :data-command-id="command.config._id")
+div.command-editor(wait-for="command", :data-command-id="getScopedId(model)")
+  div.row(v-if="command.isCustom === true")
+    div.input-field.col.s6.default-field
+      input(:id="`${ getScopedId(model) }_command`", type="text", v-model="model.command")
+      label.active(:for="`${ getScopedId(model) }_command`") Command
+
+    div.input-field.col.s6.default-field
+      input(:id="`${ getScopedId(model) }_actionString`", type="text", v-model="model.actionString")
+      label.active(:for="`${ getScopedId(model) }_actionString`") Action Text
+
   div.row
     div.input-field.col.s6.default-field(v-if="fieldVisible('cooldown')")
-      input(:id="`${ model._id }_cooldown`", type="number", v-model.number="model.cooldown", min="0")
-      label.active(:for="`${ model._id }_cooldown`") Cooldown (seconds)
+      input(:id="`${ getScopedId(model) }_cooldown`", type="number", v-model.number="model.cooldown", min="0")
+      label.active(:for="`${ getScopedId(model) }_cooldown`") Cooldown (seconds)
 
     div.input-field.col.s6.default-field(v-if="fieldVisible('userCooldown')")
-      input(:id="`${ model._id }_userCooldown`", type="number", v-model.number="model.userCooldown", min="0")
-      label.active(:for="`${ model._id }_userCooldown`") User Cooldown (seconds)
+      input(:id="`${ getScopedId(model) }_userCooldown`", type="number", v-model.number="model.userCooldown", min="0")
+      label.active(:for="`${ getScopedId(model) }_userCooldown`") User Cooldown (seconds)
 
   div.row
     div.input-field.col.s4.default-field(v-if="fieldVisible('accessLevel')")
-      select(:id="`${ model._id }_accessLevel`", v-model.number="model.accessLevel", @change="updateModel('accessLevel')")
+      select(:id="`${ getScopedId(model) }_accessLevel`", v-model.number="model.accessLevel", @change="updateModel('accessLevel')")
         option(value="0") God
         option(value="1") Moderator
         option(value="2") Subscriber
         option(value="3") Follower
         option(value="4") Viewer
-      label(:for="`${ model._id }_accessLevel`") Access Level
+      label(:for="`${ getScopedId(model) }_accessLevel`") Access Level
 
     div.input-field.col.s4.default-field(v-if="fieldVisible('messageTypes')")
-      select(:id="`${ model._id }_messageTypes`", multiple, v-model="model.messageTypes")
+      select(:id="`${ getScopedId(model) }_messageTypes`", multiple, v-model="model.messageTypes")
         option(value="chat") Chat
         option(value="whisper") Whisper
-      label(:for="`${ model._id }_messageTypes`") Message Types
+      label(:for="`${ getScopedId(model) }_messageTypes`") Message Types
 
     div.input-field.col.s4.default-field(v-if="fieldVisible('counterType')")
-      select(:id="`${ model._id }_counterType`", v-model.number="model.counterType")
+      select(:id="`${ getScopedId(model) }_counterType`", v-model.number="model.counterType")
         option(value="1") None
         option(value="2") Automatic
         option(value="3") Manual
-      label(:for="`${ model._id }_counterType`") Counter Type
+      label(:for="`${ getScopedId(model) }_counterType`") Counter Type
 
   div.row(v-if="fieldVisible('isEnabled')")
     div.input-field.col.s12.default-field
-      input.filled-in(:id="`${ model._id }_enabled`", type="checkbox", v-model="model.isEnabled")
-      label(:for="`${ model._id }_enabled`") Enable this command
+      input.filled-in(:id="`${ getScopedId(model) }_enabled`", type="checkbox", v-model="model.isEnabled")
+      label(:for="`${ getScopedId(model) }_enabled`") Enable this command
+
+  div.row(v-for="ex in addExtensions", v-html="ex.value(command)", v-if="model._id != null")
+
 </template>
 
 <!--
@@ -58,11 +70,14 @@ div.row {
 <script>
 import { debounce } from 'lodash';
 
+import { getExtensions } from '../panelLoader/panelLoader';
+
 export default {
   props: [ 'command', 'hideFields' ],
   data() {
     return {
-      model: this.command.config
+      model: this.command.config,
+      addExtensions: []
     };
   },
   watch: {
@@ -74,9 +89,15 @@ export default {
     }
   },
   methods: {
+    getScopedId(model) {
+      return model._id || 'new';
+    },
     saveModel: debounce(function() {
-      if ( this.model.cooldown < 0 ) this.model.cooldown = 0;
-      if ( this.model.userCooldown < 0 ) this.model.userCooldown = 0;
+      if ( this.model == null || this.model._id == null ) return;
+      
+      if ( typeof(this.model.cooldown) === 'string' || this.model.cooldown < 0 ) this.model.cooldown = 0;
+      if ( typeof(this.model.userCooldown) === 'string' || this.model.userCooldown < 0 ) this.model.userCooldown = 0;
+      this.$forceUpdate();
 
       this.model.save();
     }, 500),
@@ -93,18 +114,23 @@ export default {
       }
 
       this.saveModel();
+      console.log('saved');
     },
     fieldVisible(field) {
-      return !this.hideFields.some(f => f === field);
+      const hideFields = this.hideFields || [];
+      return !hideFields.some(f => f === field);
     }
   },
   updated() {
-    $('#pointSystemMainPanel [data-tooltip]').tooltip({ delay: 1000 });
+    const scoped = `.command-editor[data-command-id="${ this.getScopedId(this.model) }"]`;
+    $(`${ scoped } select`).material_select('destroy');
+    $(`${ scoped } select`).material_select();
+    $(`${ scoped } ul.multiple-select-dropdown input[type="checkbox"]`).addClass('filled-in');
   },
   mounted() {
     const that = this;
 
-    const scoped = `.command-editor[data-command-id="${ this.model._id }"]`;
+    const scoped = `.command-editor[data-command-id="${ this.getScopedId(this.model) }"]`;
     $(`${ scoped } select`).material_select('destroy');
     $(`${ scoped } select`).material_select();
     $(`${ scoped } ul.multiple-select-dropdown input[type="checkbox"]`).addClass('filled-in');
@@ -114,7 +140,9 @@ export default {
       that.updateModel($(this));
     });
 
-    $('#pointSystemMainPanel [data-tooltip]').tooltip({ delay: 1000 });
+    this.addExtensions = getExtensions('$CommandEditor')
+      .filter(ex => ex.add != null)
+      .map(ex => ex.add);
   }
 }
 </script>

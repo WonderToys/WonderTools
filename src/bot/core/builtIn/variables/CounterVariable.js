@@ -31,7 +31,7 @@ class CounterVariable extends Variable {
       return command.metadata.counter;
     }
 
-    return request.metadata.counter;
+    return null;
   }
 }
 

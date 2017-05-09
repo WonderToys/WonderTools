@@ -7,16 +7,16 @@ div#appBar
     div.nav-wrapper
       ul.left
         li
-          a(href="#", style="color: #444; padding: 0 1rem; width: 54px;", v-on:click="showAuthModal").btn.waves-effect.waves-orange.white
+          a.btn.waves-effect.waves-orange.white(href="#", style="color: #444; padding: 0 1rem; width: 54px;", v-on:click="showAuthModal")
             i.material-icons group
         li
-          a(href="#", :class="{ disabled: !canConnect() || connecting }", v-on:click="toggleBot").btn.waves-effect.waves-light.orange 
+          a.btn.waves-effect.waves-light.orange(href="#", :class="{ disabled: !canConnect() || connecting }", v-on:click="toggleBot")
             span(v-if="!connected && !connecting") Connect
             span(v-else-if="connecting") Connecting
             span(v-else) Disconnect
       ul.right
         li
-          a(href="#", style="color: #444; padding: 0 1rem; width: 54px;").btn.waves-effect.waves-orange.white
+          a.btn.waves-effect.waves-orange.white(href="#", style="color: #444; padding: 0 1rem; width: 54px;")
             i.material-icons settings
 
   auth-modal(:config="config", wait-for="config")

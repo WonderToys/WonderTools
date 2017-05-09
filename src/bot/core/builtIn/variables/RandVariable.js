@@ -1,8 +1,8 @@
-"use strict";
+import Random from 'random-js';
 
-const random = require('random-js')();
+import Variable from '../../variable/Variable';
 
-const Variable = require('../../core/variable/Variable');
+const random = Random();
 
 // -----
 //  RandVariable
@@ -34,4 +34,4 @@ class RandVariable extends Variable {
 }
 
 // Exports
-module.exports = RandVariable;
+export default RandVariable;

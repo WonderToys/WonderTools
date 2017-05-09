@@ -152,7 +152,6 @@ class Client {
           request._commandText = parsed.commandText;
           request._command = parsed.command;
           request._params = parsed.params;
-          request._metadata = parsed.command.metadata;
 
           const cooldown = parsed.command.onCooldown(viewer);
           if ( cooldown !== false && moment.isDuration(cooldown) ) {
@@ -172,6 +171,9 @@ class Client {
       .catch((result) => {
         if ( Array.isArray(result) ) {
           result.forEach(res => reply(res));
+        }
+        else if ( result instanceof Error ) {
+          reply(result.message);
         }
         else if ( typeof(result) === 'string' ) {
           reply(result);
@@ -207,8 +209,8 @@ class Client {
     this._channel = `#${ this._streamerName }`;
     this._channelId = config.streamerUserId;
     
-    // this._channel = '#slevin_4';
-    // this._channelId = '109589541';
+    this._channel = '#slevin_4';
+    this._channelId = '109589541';
 
     // this._channel = '#pookajutsu';
     // this._channelId = '29181653';

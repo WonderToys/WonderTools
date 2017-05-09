@@ -3,6 +3,9 @@
 -->
 <template lang="jade">
 div.gallery.row
+  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$CustomCommandsPanel")
+    custom-commands-panel(:is-active="isPanelActive('$CustomCommandsPanel')")
+      
   div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$ViewersPanel")
     viewers-panel(:is-active="isPanelActive('$ViewersPanel')")
 
@@ -23,10 +26,12 @@ div.gallery.row
 <script>
 import { loadPanels } from '../panelLoader/panelLoader';
 
+import CustomCommandsPanel from './panels/CustomCommandsPanel.vue';
 import ViewersPanel from './panels/ViewersPanel.vue';
 
 export default {
   components: {
+    CustomCommandsPanel,
     ViewersPanel
   },
   data() {

@@ -4,6 +4,7 @@ import ParamVariable from './ParamVariable';
 import IfVariable from './IfVariable';
 import FollowDateVariable from './FollowDateVariable';
 import QueueVariable from './QueueVariable';
+import RandVariable from './RandVariable';
 
 // Exports
 export default [
@@ -12,5 +13,6 @@ export default [
   new ParamVariable(),
   new IfVariable(),
   new FollowDateVariable(),
-  new QueueVariable()
+  new QueueVariable(),
+  new RandVariable()
 ];
