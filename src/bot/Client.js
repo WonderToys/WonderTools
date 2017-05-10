@@ -209,8 +209,11 @@ class Client {
     this._channel = `#${ this._streamerName }`;
     this._channelId = config.streamerUserId;
     
-    this._channel = '#slevin_4';
-    this._channelId = '109589541';
+    this._channel = '#karerawr';
+    this._channelId = '29251148';
+    
+    // this._channel = '#slevin_4';
+    // this._channelId = '109589541';
 
     // this._channel = '#pookajutsu';
     // this._channelId = '29181653';

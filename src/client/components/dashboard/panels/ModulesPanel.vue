@@ -5,7 +5,13 @@
 div#modulesPanel.gallery-curve-wrapper
   div.gallery-header
     span Module Manager
-    p.caption Find, install, and remove WonderTools modules.
+    p.caption 
+      | Find, install, and remove WonderTools modules.
+      span.small(v-if="updateCount > 0")
+        span.orange-text {{ updateCount }}
+        span(v-if="updateCount === 1") &nbsp;update available!
+        span(v-if="updateCount > 1") &nbsp;updates available!
+
   div.gallery-body
     div.title-wrapper
       h4 Module Manager
@@ -24,20 +30,22 @@ div#modulesPanel.gallery-curve-wrapper
               td
                 div.title 
                   a(href="#", @click="openUrl(module.url)") {{ module.name }}
-                  span.small By {{ module.author }}
+                  span.small By {{ module.author || 'Unknown' }}
                 div {{ module.description }}
-              td {{ `v${module.version}` }}
+              td 
+                span(v-if="module.updateVersion == null") {{ `v${module.version}` }}
+                span.orange-text(v-else) {{ `v${module.updateVersion}` }}
               td {{ getUpdated(module.updated) }}
               td
-                a.btn.light-blue.darken-2.waves-effect.waves-light(href="javascript:void(0);", @click="downloadModule(module.name, module.url)"
-                    v-if="!isModuleInstalled(module.name)", :class="{ disabled: isModuleDownloading(module.name) }") 
-                  span(v-if="isModuleDownloading(module.name)") Installing
+                a.btn.light-blue.darken-2.waves-effect.waves-light(href="javascript:void(0);", @click="downloadModule(module)"
+                    v-if="module.isLocal !== true", :class="{ disabled: module.isInstalling === true || module.url == null }") 
+                  span(v-if="module.isInstalling === true") Installing
                   span(v-else) Install
-                a.btn.orange.waves-effect.waves-light(href="javascript:void(0);", v-else-if="isModuleUpdated(module.name, module.version)", 
-                    @click="downloadModule(module.name, module.url, true)", :class="{ disabled: isModuleDownloading(module.name) }")
-                  span(v-if="isModuleDownloading(module.name)") Updating
+                a.btn.orange.waves-effect.waves-light(href="javascript:void(0);", v-else-if="module.hasUpdate === true", 
+                    @click="downloadModule(module, true)", :class="{ disabled: module.isInstalling === true || module.url == null }")
+                  span(v-if="module.isInstalling === true") Updating
                   span(v-else) Update
-                a.btn.red.waves-effect.waves-light(href="javascript:void(0);", v-else, @click="uninstallModule(module.name)") Uninstall
+                a.btn.red.waves-effect.waves-light(href="javascript:void(0);", v-else, @click="uninstallModule(module)") Uninstall
 
 </template>
 
@@ -45,6 +53,13 @@ div#modulesPanel.gallery-curve-wrapper
   Style
 -->
 <style scoped lang="less">
+p.caption {
+  span.small {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+}
 td {
   text-align: center;
 
@@ -87,7 +102,7 @@ export default {
   data() {
     return {
       modules: [],
-      activeDownloads: []
+      updateCount: 0
     }
   },
   watch: {
@@ -99,41 +114,63 @@ export default {
   },
   methods: {
     loadModules() {
-      github.getRemoteModules()
-        .then((modules) => this.modules = modules);
+      return github.getRemoteModules()
+        .then((remoteModules) => {
+          let allModules = remoteModules;
+
+          // Get local modules
+          moduleStore._localModules.forEach((module) => {
+            module.isLocal = true;
+
+            const found = remoteModules.find(m => m.name === module.name);
+            if ( found != null ) {
+              module.url = found.url;
+              allModules = allModules.filter(m => m.name !== module.name);
+
+              if ( semver.gt(found.version, module.version) ) {
+                module.updateVersion = found.version;
+                module.hasUpdate = true;
+              }
+            }
+
+            allModules.push(module);
+          });
+
+          this.modules = allModules;
+          return allModules;
+        });
     },
     getUpdated(when) {
+      if ( when == null ) {
+        return 'Unknown';
+      }
+
       return moment(when).fromNow();
-    },
-    isModuleInstalled(name) {
-      return moduleStore._modules[name] != null;
-    },
-    isModuleDownloading(name) {
-      return this.activeDownloads.some(m => m === name);
-    },
-    isModuleUpdated(name, version) {
-      const module = moduleStore._modules[name];
-      return semver.gt(version, module._moduleVersion);
     },
     openUrl(url) {
       shell.openExternal(url);
     },
-    uninstallModule(name) {
-      moduleStore._removeModule(name)
-        .then(() => moduleStore.unload())
-        .then(() => moduleStore.load())
+    uninstallModule(remoteModule) {
+      moduleStore._removeModule(remoteModule.name)
         .then(() => {
             this.$nextTick(() => {
+              remoteModule.isInstalling = false;
+              remoteModule.isLocal = false;
+
               this.$emit('modules-changed');
               this.$forceUpdate();
           });
         });
     },
-    downloadModule(name, baseUrl, update) {
-      if ( this.isModuleDownloading(name) ) return;
+    downloadModule(remoteModule, update) {
+      const name = remoteModule.name;
+      const baseUrl = remoteModule.url;
 
+      if ( remoteModule.isInstalling === true || baseUrl == null ) return;
+
+      remoteModule.isInstalling = true;
+      this.$forceUpdate();
       const savePath = join(remote.app.getPath('userData'), 'modules', `${ name }.zip`);
-      this.activeDownloads.push(name);
 
       let promise = Promise.resolve();
       if ( update === true ) {
@@ -141,17 +178,29 @@ export default {
       }
 
       promise.then(() => github.downloadArchive(baseUrl, savePath))
-        .then((zipPath) => moduleStore._extractModule(zipPath))
-        .then((zipPath) => unlinkSync(zipPath))
-        .then(() => moduleStore.unload())
-        .then(() => moduleStore.load())
+        .then((zipPath) => moduleStore._installModule(remoteModule, zipPath))
+        .then(() => unlinkSync(savePath))
         .then(() => {
           this.$nextTick(() => {
-            this.activeDownloads = this.activeDownloads.filter(m => m !== name);
+            remoteModule.isInstalling = false;
+            remoteModule.isLocal = true;
+            if ( update === true ) {
+              remoteModule.version = remoteModule.updateVersion;
+              remoteModule.updateVersion = null;
+              remoteModule.hasUpdate = false;
+            }
+
             this.$emit('modules-changed');
+            this.$forceUpdate();
           });
         });
     }
+  },
+  mounted() {
+    this.loadModules()
+      .then((modules) => {
+        this.updateCount = modules.filter(m => m.hasUpdate === true).length;
+      });
   }
 }
 </script>

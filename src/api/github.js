@@ -57,14 +57,7 @@ const getModuleJson = function getModuleJson(data) {
       }
 
       const modDef = JSON.parse(atob(content));
-      resolve({
-        name: modDef.name,
-        description: modDef.description,
-        version: modDef.version || 'Unknown',
-        author: modDef.author || 'Unknown',
-        updated: data.updated,
-        url: data.url
-      });
+      resolve(Object.assign({}, modDef, { updated: data.updated, url: data.url }));
     });
   });
 }; //- getModuleJson()

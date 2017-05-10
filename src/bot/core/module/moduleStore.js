@@ -5,6 +5,7 @@ import { remote } from 'electron';
 import glob from 'glob';
 import unzip from 'unzip';
 import rimraf from 'rimraf';
+import mkdirp from 'mkdirp';
 
 import commandStore from '../command/commandStore';
 import variableStore from '../variable/variableStore';
@@ -22,6 +23,7 @@ import { addPath as addRequirePath } from 'app-module-path';
 // -----
 
 const WT_PROVIDER_REGEX = /^(wtools\/)/i;
+const MODULES_PATH = path.join(remote.app.getPath('userData'), 'modules');
 
 // -----
 //  Monkeypatch
@@ -53,6 +55,16 @@ class ModuleStore {
   constructor() {
     this._modules = {};
 
+    // Create modules.json if not exist
+    const jsonPath = path.join(MODULES_PATH, 'modules.json');
+
+    if ( !fs.existsSync(jsonPath) ) {
+      fs.writeFileSync(jsonPath, JSON.stringify([], null, 4), 'utf8');
+    }
+
+    this._localModules = require(jsonPath);
+
+    // Register
     this._registerStandardProviders();
   }
 
@@ -94,6 +106,8 @@ class ModuleStore {
         modInstance._moduleName = manifest.name;
         modInstance._moduleRoot = moduleRoot;
         modInstance._moduleVersion = manifest.version;
+        modInstance._moduleAuthor = manifest.author;
+        modInstance._moduleDescription = manifest.description;
 
         modInstance._ui = manifest.ui || {
           panels: {},
@@ -193,13 +207,62 @@ class ModuleStore {
     return Promise.all(promises);
   }
 
-  _extractModule(archivePath) {
+  _extractModule(name, archivePath) {
+    let modulePath = path.join(path.dirname(archivePath), name);
+    mkdirp.sync(modulePath);
+
     return new Promise((resolve, reject) => {
       fs.createReadStream(archivePath)
-        .pipe(unzip.Extract({ path: path.dirname(archivePath) }))
+        .pipe(unzip.Parse())
+        .on('entry', (entry) => {
+          const parts = path.normalize(entry.path).split(path.sep);
+          const filePath = path.join(modulePath, parts.slice(1).join(path.sep));
+
+          if ( entry.type === 'File' ) {
+            entry.pipe(fs.createWriteStream(filePath));
+          }
+          else {
+            // Swallow error that directory already exists
+            try {
+              mkdirp.sync(filePath);
+              entry.autodrain();
+            } catch ( e ) {}
+          }
+        })
         .on('error', (err) => reject(err))
-        .on('close', () => resolve(archivePath));
+        .on('close', () => {
+          setTimeout(() => {
+            resolve(modulePath);
+          }, 1000);
+        });
     });
+  }
+
+  _installModule(remoteModule, archivePath) {
+    return this._removeModule(remoteModule.name)
+      .then(() => this._extractModule(remoteModule.name, archivePath))
+      .then((modulePath) => {
+        const manifest = require(path.join(modulePath, 'module.json'));
+        const jsonPath = path.join(MODULES_PATH, 'modules.json');
+
+        let installedModules = [];
+        if ( fs.existsSync(jsonPath) ) {
+          installedModules = JSON.parse(fs.readFileSync(jsonPath), 'utf8');
+        }
+
+        installedModules.push({
+          name: manifest.name,
+          author: manifest.author,
+          version: manifest.version,
+          description: manifest.description,
+          updated: remoteModule.updated,
+          url: remoteModule.url
+        });
+        
+        fs.writeFileSync(jsonPath, JSON.stringify(installedModules, null, 4), 'utf8');
+
+        return this._loadModule(manifest, modulePath);
+      });
   }
 
   _removeModule(name) {
@@ -220,6 +283,17 @@ class ModuleStore {
 
       delete this._modules[name];
 
+      // Update installed modules
+      const jsonPath = path.join(MODULES_PATH, 'modules.json');
+
+      let installedModules = [];
+      if ( fs.existsSync(jsonPath) ) {
+        installedModules = JSON.parse(fs.readFileSync(jsonPath), 'utf8');
+        installedModules = installedModules.filter((m) => m.name !== name);
+      }
+
+      fs.writeFileSync(jsonPath, JSON.stringify(installedModules, null, 4), 'utf8');
+
       rimraf(modulePath, resolve);
     });
   }
@@ -229,26 +303,18 @@ class ModuleStore {
   // -----
 
   load(force) {
-    this._modules = {};
-    
-    const modulePath = path.join(remote.app.getPath('userData'), 'modules');
-    return new Promise((resolve, reject) => {
-      glob(`${ modulePath }/**/module.json`, (err, files) => {
-        if ( err != null ) {
-          return reject(err);
-        }
-        
-        const promises = files.map((file) => {
-          const manifest = require(file);
-          const moduleRoot = path.dirname(file);
-          return this._loadModule(manifest, moduleRoot);
-        });
+    this._modules = {};    
+    this._localModules = require(path.join(MODULES_PATH, 'modules.json'));
 
-        Promise.all(promises)
-          .then(resolve)
-          .catch(reject);
-      });
+    const promises = this._localModules.map((module) => {
+      const moduleRoot = path.join(MODULES_PATH, module.name);
+      const manifestPath = path.join(moduleRoot, 'module.json');
+      const manifest = require(manifestPath);
+
+      return this._loadModule(manifest, moduleRoot);
     });
+
+    return Promise.all(promises);
   }
 
   unload() {
