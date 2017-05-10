@@ -12,7 +12,7 @@ div#customCommandsPanel.gallery-curve-wrapper
     div.content(v-if="isActive")
       div.row
         div.right
-          a.btn.waves-effect.waves-light.orange(href="#", v-on:click="openAddModal")
+          a.btn.waves-effect.waves-light.orange(href="#", @click="openAddModal")
             i.material-icons.left add
             | Add Custom Command
       div.row

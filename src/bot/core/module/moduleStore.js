@@ -1,7 +1,10 @@
 import path from 'path';
+import NodeModule from 'module';
+import fs from 'fs';
 import { remote } from 'electron';
 import glob from 'glob';
-import NodeModule from 'module';
+import unzip from 'unzip';
+import rimraf from 'rimraf';
 
 import commandStore from '../command/commandStore';
 import variableStore from '../variable/variableStore';
@@ -90,6 +93,7 @@ class ModuleStore {
 
         modInstance._moduleName = manifest.name;
         modInstance._moduleRoot = moduleRoot;
+        modInstance._moduleVersion = manifest.version;
 
         modInstance._ui = manifest.ui || {
           panels: {},
@@ -187,6 +191,37 @@ class ModuleStore {
     });
 
     return Promise.all(promises);
+  }
+
+  _extractModule(archivePath) {
+    return new Promise((resolve, reject) => {
+      fs.createReadStream(archivePath)
+        .pipe(unzip.Extract({ path: path.dirname(archivePath) }))
+        .on('error', (err) => reject(err))
+        .on('close', () => resolve(archivePath));
+    });
+  }
+
+  _removeModule(name) {
+    return new Promise((resolve, reject) => {
+      const module = this._modules[name];
+      
+      if ( module == null) return resolve();
+
+      const modulePath = module._moduleRoot;
+      module.unload();
+
+      const keys = Object.keys(require.cache);
+      keys.forEach((key) => {
+        if ( key.indexOf(modulePath.replace(/\//g, '\\')) >= 0 ) {
+          delete require.cache[key];
+        }
+      });
+
+      delete this._modules[name];
+
+      rimraf(modulePath, resolve);
+    });
   }
 
   // -----
