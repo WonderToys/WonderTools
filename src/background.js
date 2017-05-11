@@ -1,7 +1,8 @@
 import path from 'path';
 import url from 'url';
-import { app, ipcMain, Menu, session } from 'electron';
+import { app, ipcMain, Menu, session, dialog } from 'electron';
 import electronOauth2 from 'electron-oauth2';
+import { autoUpdater } from 'electron-updater';
 import jetpack from 'fs-jetpack';
 import TwitchApi from 'twitch-api';
 
@@ -26,7 +27,12 @@ if ( env.name !== 'production' ) {
   app.setPath('userData', `${userDataPath} (${env.name})`);
 }
 
+// -----
+//  OnReady
+// -----
+
 app.on('ready', () => {
+  // Setup application
   setApplicationMenu();
   const twitch = new TwitchApi({
     clientId: appConfig.twitch.clientId
@@ -52,6 +58,42 @@ app.on('ready', () => {
     //mainWindow.openDevTools();
   }
 
+  // AutoUpdater
+  autoUpdater.on('checking-for-update', () => {
+    mainWindow.webContents.send('set-notification', 'Checking for updates ...');
+  });
+
+  autoUpdater.on('download-progress', (event) => {
+    mainWindow.webContents.send('set-notification', `Downloading Update (${ Math.round(event.percent) }%)`);
+  });
+
+  autoUpdater.on('error', () => {
+    mainWindow.webContents.send('set-notification', '');
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'New Version',
+      message: 'A new version of WonderTools has been downloaded. Would you like to quit and install it now?',
+      buttons: ['Of course!', 'Nah']
+    }, (buttonIndex) => {
+      if (buttonIndex === 0) {
+        autoUpdater.quitAndInstall()
+      }
+      else {
+        mainWindow.webContents.send('set-notification', '');
+      }
+    });
+  });
+
+  // check
+  ipcMain.once('check-for-updates', () => {
+    autoUpdater.checkForUpdates();
+  });
+
+  // twitch-auth
+  ipcMain.removeAllListeners('twitch-auth');
   ipcMain.on('twitch-auth', (event, kind) => {
     var config = {
       clientId: appConfig.twitch.clientId,
@@ -80,7 +122,7 @@ app.on('ready', () => {
     };
 
     if ( kind === 'streamer' ) {
-      
+      scope: 'channel_check_subscription channel_subscriptions channel_editor channel_feed_edit channel_feed_read'
     }
 
     const myApiOauth = electronOauth2(config, windowParams);
@@ -110,7 +152,7 @@ app.on('ready', () => {
         session.defaultSession.clearStorageData();
         return event.sender.send('twitch-auth-reply', { error });
       });
-  });
+  }); //- twitch-auth
 });
 
 app.on('window-all-closed', () => {

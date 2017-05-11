@@ -105,3 +105,14 @@ export const getUserFollowsChannel = function getUserFollowsChannel(userId, chan
       return new Date(result.created_at);
     });
 }; //- getUserFollowsChannel()
+
+// getStreamInfo()
+export const getStreamInfo = function getStreamInfo(channel) {
+  const url = _getUri(`/streams/${ channel }`);
+  return _get(url)
+    .then((body) => {
+      if ( body == null ) return body;
+
+      return JSON.parse(body);
+    });
+}; //- getStreamInfo()

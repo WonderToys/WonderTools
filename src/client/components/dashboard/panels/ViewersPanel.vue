@@ -5,7 +5,7 @@
 div#viewersPanel.gallery-curve-wrapper
   div.gallery-header
     span Viewers
-    p.caption Set regulars, ban and unban, timeout viewers, and see viewer history. 
+    p.caption View and manage stream viewers.
   div.gallery-body
     div.title-wrapper
       h4 Viewers

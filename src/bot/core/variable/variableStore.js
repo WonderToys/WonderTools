@@ -72,6 +72,8 @@ class VariableStore {
 
     // Add built-in variables
     promises.concat(builtInVariables.map((v) => {
+      v.__isOfficial = true;
+
       return this._register(v);
     }));
 

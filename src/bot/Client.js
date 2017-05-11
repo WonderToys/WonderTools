@@ -1,10 +1,12 @@
 import tmi from 'tmi.js';
 import moment from 'moment';
 
+import env from '../env';
+
+import moduleStore from './core/module/moduleStore';
 import commandStore from './core/command/commandStore';
 import variableStore from './core/variable/variableStore';
 import viewerStore from './core/viewer/viewerStore';
-import moduleStore from './core/module/moduleStore';
 import Request from './Request';
 
 import { resolve as resolveCommand, execute as executeCommand } from './resolvers/commandResolver';
@@ -209,18 +211,23 @@ class Client {
     this._channel = `#${ this._streamerName }`;
     this._channelId = config.streamerUserId;
     
-    this._channel = '#karerawr';
-    this._channelId = '29251148';
+    if ( env.name !== 'production' ) {
+      // this._channel = '#fahros';
+      // this._channelId = '20698451';
+      
+      // this._channel = '#karerawr';
+      // this._channelId = '29251148';
+      
+      this._channel = '#slevin_4';
+      this._channelId = '109589541';
+
+      // this._channel = '#pookajutsu';
+      // this._channelId = '29181653';
+
+      // this._channel = '#ampff';
+      // this._channelId = '84620624';
+    }
     
-    // this._channel = '#slevin_4';
-    // this._channelId = '109589541';
-
-    // this._channel = '#pookajutsu';
-    // this._channelId = '29181653';
-
-    // this._channel = '#ampff';
-    // this._channelId = '84620624';
-
     this._isConnecting = false;
 
     this._ircClient = new tmi.client({

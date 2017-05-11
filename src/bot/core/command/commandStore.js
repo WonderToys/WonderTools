@@ -44,6 +44,8 @@ class CommandStore {
 
         return Promise.all(configs.map((config) => {
           const custom = new Command(config);
+          custom.__isOfficial = false;
+
           return this._register(custom);
         }));
       });
@@ -55,6 +57,8 @@ class CommandStore {
       .save()
       .then((config) => {
         const command = new Command(config);
+        command.__isOfficial = false;
+
         return this._register(command);
       });
   }
@@ -88,6 +92,8 @@ class CommandStore {
 
     // Add built-in commands
     promises.concat(builtInCommands.map((cmd) => {
+      cmd.__isOfficial = true;
+
       return this._register(cmd);
     }));
 

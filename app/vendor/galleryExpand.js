@@ -109,6 +109,10 @@
             return;
           }
 
+          if ( $(this).find('.gallery-curve-wrapper').hasClass('disabled') ) {
+            return;
+          }
+
           originClickable = false;
 
           // Cancel timeout.

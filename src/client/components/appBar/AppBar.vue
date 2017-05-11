@@ -14,6 +14,7 @@ div#appBar
             span(v-if="!connected && !connecting") Connect
             span(v-else-if="connecting") Connecting
             span(v-else) Disconnect
+      div.notifications {{ notification }}
       ul.right
         li
           a.btn.waves-effect.waves-orange.white(href="#", style="color: #444; padding: 0 1rem; width: 54px;")
@@ -26,6 +27,12 @@ div#appBar
   Style
 -->
 <style scoped lang="less">
+div.notifications {
+  display: inline-block;
+  text-align: center;
+  width: 64%;
+}
+
 nav.fixed-bottom {
   position: fixed;
   bottom: 0;
@@ -38,6 +45,8 @@ nav.fixed-bottom {
   Script
 -->
 <script>
+import { ipcRenderer } from 'electron';
+
 import Config from '../../models/Config';
 import Client from '../../../bot/Client';
 
@@ -52,6 +61,7 @@ export default {
       config: null,
       connected: false,
       connecting: false,
+      notification: ''
     };
   },
   watch: {
@@ -100,8 +110,14 @@ export default {
       }
     }
   },
+  mounted() {
+    ipcRenderer.send('check-for-updates');
+  },
   created() {
     this.loadConfig();
+    ipcRenderer.on('set-notification', (event, message) => {
+      this.notification = message;
+    });
   }
 }
 </script>

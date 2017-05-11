@@ -14,6 +14,7 @@ import Module from './Module';
 import Viewer from '../viewer/Viewer';
 import Variable from '../variable/Variable';
 import Persistable from '../../Persistable';
+import Globals from '../../Globals';
 import { Command } from '../command/Command';
 
 import { addPath as addRequirePath } from 'app-module-path';
@@ -78,6 +79,7 @@ class ModuleStore {
     NodeModule._cache['wtools/Variable'] = { exports: Variable };
     NodeModule._cache['wtools/Command'] = { exports: Command };
     NodeModule._cache['wtools/Persistable'] = { exports: Persistable };
+    NodeModule._cache['wtools/Globals'] = { exports: Globals };
   }
 
   _loadFileWithPatchedRequire(filename) {
@@ -165,6 +167,7 @@ class ModuleStore {
         const cmdInstance = new cmdClass();
         cmdInstance._moduleName = moduleName;
         cmdInstance._commandPath = commandPath;
+        cmdInstance.__isOfficial = false;
 
         module._commands.push(cmdInstance);
 
@@ -194,6 +197,7 @@ class ModuleStore {
         const varInstance = new varClass();
         varInstance._moduleName = moduleName;
         varInstance._variablePath = variablePath;
+        varInstance.__isOfficial = false;
         
         module._variables.push(varInstance);
 

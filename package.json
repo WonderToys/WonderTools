@@ -2,7 +2,7 @@
   "name": "wtclient",
   "productName": "WonderTools",
   "description": "WonderTools Desktop Client",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "author": "WonderToys <wondertoysvg@gmail.com>",
   "copyright": "© 2017, WonderToys",
   "homepage": "http://example.com",
@@ -14,19 +14,28 @@
       "node_modules/**/*",
       "package.json"
     ],
-    "publish": null
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "WonderToys",
+        "repo": "wondertools"
+      }
+    ]
   },
   "scripts": {
     "postinstall": "install-app-deps",
     "build": "gulp build",
     "prerelease": "gulp build --env=production",
     "release": "build",
+    "prepublish": "gulp build --env=production",
+    "publish": "build -p always",
     "start": "gulp start"
   },
   "dependencies": {
     "app-module-path": "^2.2.0",
     "camo": "^0.12.3",
     "electron-oauth2": "github:wondertoys/electron-oauth2",
+    "electron-updater": "^1.15.0",
     "fs-jetpack": "^0.12.0",
     "glob": "^7.1.1",
     "materialize-css": "^0.98.2",
@@ -48,7 +57,7 @@
   },
   "devDependencies": {
     "electron": "1.6.2",
-    "electron-builder": "^14.5.2",
+    "electron-builder": "^14.5.3",
     "gulp": "^3.9.1",
     "gulp-batch": "^1.0.5",
     "gulp-less": "^3.3.0",
