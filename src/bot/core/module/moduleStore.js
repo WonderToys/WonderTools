@@ -57,6 +57,7 @@ class ModuleStore {
     this._modules = {};
 
     // Create modules.json if not exist
+    mkdirp.sync(MODULES_PATH);
     const jsonPath = path.join(MODULES_PATH, 'modules.json');
 
     if ( !fs.existsSync(jsonPath) ) {

@@ -137,6 +137,7 @@ export default {
           });
 
           this.modules = allModules;
+
           return allModules;
         });
     },

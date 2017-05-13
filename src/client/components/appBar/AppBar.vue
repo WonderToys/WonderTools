@@ -45,7 +45,7 @@ nav.fixed-bottom {
   Script
 -->
 <script>
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, remote } from 'electron';
 
 import Config from '../../models/Config';
 import Client from '../../../bot/Client';

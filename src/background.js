@@ -15,7 +15,7 @@ import env from './env';
 import appConfig from '../config';
 
 const setApplicationMenu = () => {
-  const menus = [editMenuTemplate];
+  const menus = [ editMenuTemplate ];
   if (env.name !== 'production') {
     menus.push(devMenuTemplate);
   }

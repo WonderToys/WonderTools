@@ -83,10 +83,11 @@ export default {
       }
 
       const duration = moment.duration(moment() - moment(data.stream.created_at));
+      console.log(duration.asHours());
 
       this.streamGame = data.stream.game;
       this.streamTitle = data.stream.channel.status;
-      if ( duration.asHours() > 0 ) {
+      if ( duration.asHours() >= 1 ) {
         this.upSince = moment.utc(duration.asMilliseconds()).format('hh:mm:ss')  
       }
       else {
