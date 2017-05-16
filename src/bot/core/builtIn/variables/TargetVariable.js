@@ -13,6 +13,14 @@ class TargetVariable extends Variable {
     return '$target';
   }
 
+  get description() {
+    return 'Gets the target of the command (the first paramter)';
+  }
+
+  get usage() {
+    return '$target';
+  }
+
   // -----
   //  Public
   // -----

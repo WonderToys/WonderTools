@@ -13,6 +13,14 @@ class IfVariable extends Variable {
     return '$if';
   }
 
+  get description() {
+    return 'Do some simple logic tests';
+  }
+
+  get usage() {
+    return '$if(=, TRUE, FALSE, "True!", "False!")';
+  }
+
   // -----
   //  Private
   // -----

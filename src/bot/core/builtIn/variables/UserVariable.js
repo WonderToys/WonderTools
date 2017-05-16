@@ -13,6 +13,14 @@ class UserVariable extends Variable {
     return '$user';
   }
 
+  get description() {
+    return 'Get the name of the user who called the command';
+  }
+
+  get usage() {
+    return '$user';
+  }
+
   // -----
   //  Public
   // -----

@@ -3,14 +3,14 @@
 -->
 <template lang="jade">
 div#appBar
-  nav.fixed-bottom.light-blue.darken-2
+  nav.fixed-bottom
     div.nav-wrapper
       ul.left
         li
           a.btn.waves-effect.waves-orange.white(href="#", style="color: #444; padding: 0 1rem; width: 54px;", v-on:click="showAuthModal")
             i.material-icons group
         li
-          a.btn.waves-effect.waves-light.orange(href="#", :class="{ disabled: !canConnect() || connecting }", v-on:click="toggleBot")
+          a.btn.waves-effect.waves-light(href="#", :class="{ disabled: !canConnect() || connecting }", v-on:click="toggleBot")
             span(v-if="!connected && !connecting") Connect
             span(v-else-if="connecting") Connecting
             span(v-else) Disconnect
@@ -36,8 +36,9 @@ div.notifications {
 nav.fixed-bottom {
   position: fixed;
   bottom: 0;
-  border-top: 1px solid #0277bd;
+  border-top: 1px solid darken(#005C94, 2%);
   box-shadow: none;
+  background-color: #005C94;
 }
 </style>
 

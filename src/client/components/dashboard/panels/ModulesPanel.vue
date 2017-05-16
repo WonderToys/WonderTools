@@ -37,11 +37,11 @@ div#modulesPanel.gallery-curve-wrapper
                 span.orange-text(v-else) {{ `v${module.updateVersion}` }}
               td {{ getUpdated(module.updated) }}
               td
-                a.btn.light-blue.darken-2.waves-effect.waves-light(href="javascript:void(0);", @click="downloadModule(module)"
+                a.btn.waves-effect.waves-light.install(href="javascript:void(0);", @click="downloadModule(module)"
                     v-if="module.isLocal !== true", :class="{ disabled: module.isInstalling === true || module.url == null }") 
                   span(v-if="module.isInstalling === true") Installing
                   span(v-else) Install
-                a.btn.orange.waves-effect.waves-light(href="javascript:void(0);", v-else-if="module.hasUpdate === true", 
+                a.btn.waves-effect.waves-light(href="javascript:void(0);", v-else-if="module.hasUpdate === true", 
                     @click="downloadModule(module, true)", :class="{ disabled: module.isInstalling === true || module.url == null }")
                   span(v-if="module.isInstalling === true") Updating
                   span(v-else) Update
@@ -53,6 +53,10 @@ div#modulesPanel.gallery-curve-wrapper
   Style
 -->
 <style scoped lang="less">
+a.install {
+  background-color: #005C94 !important;
+}
+
 p.caption {
   span.small {
     display: block;

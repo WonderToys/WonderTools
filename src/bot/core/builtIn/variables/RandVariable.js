@@ -17,6 +17,14 @@ class RandVariable extends Variable {
     return '$rand';
   }
 
+  get description() {
+    return 'Get a random number';
+  }
+
+  get usage() {
+    return '$rand(MIN, MAX)';
+  }
+
   // -----
   //  Public
   // -----

@@ -13,6 +13,14 @@ class FollowDateVariable extends Variable {
     return '$followdate';
   }
 
+  get description() {
+    return 'Get the followed date for the user calling the command';
+  }
+
+  get usage() {
+    return '$followdate';
+  }
+
   // -----
   //  Public
   // -----

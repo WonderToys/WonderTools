@@ -13,7 +13,7 @@ div#timersPanel.gallery-curve-wrapper
     div.content(v-if="isActive")
       div.row
         div.right
-          a.btn.waves-effect.waves-light.orange(href="#", @click="openAddModal")
+          a.btn.waves-effect.waves-light(href="#", @click="openAddModal")
             i.material-icons.left add
             | Add Timer
 

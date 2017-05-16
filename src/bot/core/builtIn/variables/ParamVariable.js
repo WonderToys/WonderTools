@@ -13,6 +13,18 @@ class ParamVariable extends Variable {
     return /\$\d+/;
   }
 
+  get displayName() {
+    return '$N';
+  }
+
+  get description() {
+    return 'Get the numbered parameter passed to the command';
+  }
+
+  get usage() {
+    return '$1, $2, $3, etc ...';
+  }
+
   // -----
   //  Public
   // -----

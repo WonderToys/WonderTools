@@ -39,9 +39,6 @@ class Client {
       resolveVariable(message, request)
         .then((result) => {
           reply(request.channel, result);
-        })
-        .catch((error) => {
-          console.error(error);
         });
     };
   }; //- _wrapReply()
@@ -195,10 +192,7 @@ class Client {
     return commandStore.load()
       .then(() => variableStore.load())
       .then(() => moduleStore.load())
-      .then(() => this._isLoaded = true)
-      .catch((e) => { 
-        throw e; 
-      });
+      .then(() => this._isLoaded = true);
   }
 
   setConfig(config) {
@@ -255,10 +249,7 @@ class Client {
       .then(() => this._setupListeners())
       .then(() => this._ircClient.connect())
       .then(() => viewerStore.load(this._channel, this._channelId))
-      .then(() => this._isConnecting = false)
-      .catch((e) => {
-        throw e;
-      });
+      .then(() => this._isConnecting = false);
   } //- connect()
 
   disconnect() {

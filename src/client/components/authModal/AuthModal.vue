@@ -7,20 +7,20 @@ div#authModal.modal
     p.text-red.darken-2 Your bot cannot connect to Twitch until you authorize both your bot's account and your streaming account.
     div.row
       div(v-if="config == null || config.botAccessToken == null")
-        a(href="#", v-on:click="authorize('bot')", :class="{ disabled: authingbot }").btn.waves-effect.waves-light.orange.col.s12 
+        a(href="#", v-on:click="authorize('bot')", :class="{ disabled: authingbot }").btn.waves-effect.waves-light.col.s12 
           span(v-if="authingbot") Authorizing ...
           span(v-else) Authorize Bot
       div(v-else)
-        a(href="#", v-on:click="deauthorize('bot')").btn.waves-effect.waves-light.orange.col.s12 
+        a(href="#", v-on:click="deauthorize('bot')").btn.waves-effect.waves-light.col.s12 
           span Deauth {{ config.botName }}
 
     div.row
       div(v-if="config == null || config.streamerAccessToken == null")
-        a(href="#", v-on:click="authorize('streamer')", :class="{ disabled: authingstreamer }").btn.waves-effect.waves-light.orange.col.s12
+        a(href="#", v-on:click="authorize('streamer')", :class="{ disabled: authingstreamer }").btn.waves-effect.waves-light.col.s12
           span(v-if="authingstreamer") Authorizing ...
           span(v-else) Authorize Streamer
       div(v-else)
-        a(href="#", v-on:click="deauthorize('streamer')").btn.waves-effect.waves-light.orange.col.s12
+        a(href="#", v-on:click="deauthorize('streamer')").btn.waves-effect.waves-light.col.s12
           span Deauth {{ config.streamerName }}
 </template>
 

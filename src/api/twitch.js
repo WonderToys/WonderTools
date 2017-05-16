@@ -79,9 +79,6 @@ export const getViewers = function getViewers(channel, retry) {
       });
 
       return viewers;
-    })
-    .catch((err) => {
-      console.error(err);
     });
 }; //- getViewers()
 

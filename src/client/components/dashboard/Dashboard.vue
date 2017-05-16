@@ -18,11 +18,14 @@ div.gallery.row
   div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$ViewersPanel")
     viewers-panel(:is-active="isPanelActive('$ViewersPanel')")
 
+  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$VariablesPanel")
+    variables-panel(:is-active="isPanelActive('$VariablesPanel')")
+
   div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(v-for="panel in panels", :data-panel-name="panel")
     component(:is="panel", :is-active="isPanelActive(panel)")
 
   div#scrollButtonContainer.fixed-action-btn(style="bottom: 12px; right: 11%;", :class="{ visible: showToTopButton }")
-    a.btn-floating.btn-large.orange.waves-effect.waves-light(@click="scrollTop")
+    a.btn-floating.btn-large.waves-effect.waves-light(@click="scrollTop")
       i.material-icons arrow_upward
 </template>
 
@@ -71,6 +74,7 @@ import CustomCommandsPanel from './panels/CustomCommandsPanel.vue';
 import ViewersPanel from './panels/ViewersPanel.vue';
 import ModulesPanel from './panels/ModulesPanel.vue';
 import TimersPanel from './panels/TimersPanel.vue';
+import VariablesPanel from './panels/VariablesPanel.vue';
 
 export default {
   components: {
@@ -78,7 +82,8 @@ export default {
     CustomCommandsPanel,
     ViewersPanel,
     ModulesPanel,
-    TimersPanel
+    TimersPanel,
+    VariablesPanel
   },
   data() {
     return {

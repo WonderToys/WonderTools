@@ -306,7 +306,7 @@
           }, 0);
 
           // Add Navbar
-          var navbar = $('<nav id="placeholder-navbar" class="light-blue darken-2"></nav>');
+          var navbar = $('<nav id="placeholder-navbar"></nav>');
           var navWrapper = $('<div class="nav-wrapper"></div>');
           var container = $('<div class="container"></div>');
 

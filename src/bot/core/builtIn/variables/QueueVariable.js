@@ -17,6 +17,14 @@ class QueueVariable extends Variable {
     return '$queue';
   }
 
+  get description() {
+    return 'Get, remove, or add to a queue. QUEUE NAME defaults to the name of the called command. WHAT defaults to viewer who called the command.';
+  }
+
+  get usage() {
+    return '$queue(add|pop|remove, [QUEUE NAME], WHAT)';
+  }
+
   // -----
   //  Public
   // -----

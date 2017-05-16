@@ -16,6 +16,14 @@ class CounterVariable extends Variable {
     return '$counter';
   }
 
+  get description() {
+    return 'Get the counter for the specified command';
+  }
+
+  get usage() {
+    return '$counter(NAME)';
+  }
+
   // -----
   //  Public
   // -----

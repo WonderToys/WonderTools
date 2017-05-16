@@ -4,6 +4,8 @@ import { remote } from 'electron';
 
 import Vue from 'vue/dist/vue';
 
+import errorHandler from './errorHandler.js';
+
 import Client from './bot/Client';
 import App from './client/App.vue';
 

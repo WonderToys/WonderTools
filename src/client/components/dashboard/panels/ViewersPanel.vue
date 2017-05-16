@@ -13,7 +13,7 @@ div#viewersPanel.gallery-curve-wrapper
       div.row(style="margin-bottom: 0px;")
         div(style="display: inline-block; line-height: 59px;")
           em Showing viewers {{ startItem }}-{{ endItem }} of {{ viewersCount }}
-        div.right
+        div.right(v-if="viewersCount > 50")
           pagination(:page="1", :total-items="viewersCount", :per-page="50", @page-changed="onPageChanged")
       div.row
         table.striped.responsive-table
@@ -85,7 +85,7 @@ export default {
       addExtensions: [],
       addExValues: {},
       currentPage: 1,
-      startItem: 1,
+      startItem: 0,
       endItem: 50
     }
   },
@@ -109,7 +109,8 @@ export default {
       var sort = [ '-isBroadcaster', '-isModerator', '-isSubscriber', '-isFollower', 'displayName', 'username' ];
 
       if ( this.currentPage === 1 ) {
-        this.startItem = 1;
+        if ( this.viewersCount > 0 ) this.startItem = 1;
+        if ( this.viewersCount === 0 ) this.startItem = 0;
       }
       else {
         this.startItem = ((this.currentPage - 1) * 50) + 1;

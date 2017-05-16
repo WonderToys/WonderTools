@@ -11,14 +11,33 @@
   </head>
 
   <body>
+    <!-- App -->
     <app></app>
 
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+      <div class="modal-content">
+        <h5 class="red-text" style="margin-top: 0px;">Something broke :(</h5>
+        <p>Well shoot, looks like something went terribly wrong. We've logged the error, at least. Please visit us at <a id="supportLink" href="javascript:void(0);">http://community.wondertools.tv</a> and report the problem so we can fix it.</p>
+        <p style="font-size: 0.9rem;">Log Path: <span id="errorLogPath"></span></p>
+      </div>
+      <div class="modal-footer">
+        <a href="javascript:void(0);" class="modal-action modal-close waves-effect waves-red btn-flat">Close</a>
+      </div>
+    </div>
+
+    <!-- Scripts -->
     <script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
     <script type="text/javascript" src="../node_modules/hammerjs/hammer.min.js"></script>
     <script type="text/javascript" src="../node_modules/materialize-css/dist/js/materialize.js"></script>
 
     <script type="text/javascript" src="vendor/galleryExpand.js"></script>
     <script type="text/javascript" src="vendor/masonry.js"></script>
+
+    <!-- Load -->
+    <script>
+      $('#errorModal').modal();
+    </script>
 
     <script type="text/javascript" src="app.js"></script>
   </body>
