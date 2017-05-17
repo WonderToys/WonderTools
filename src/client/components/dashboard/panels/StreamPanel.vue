@@ -83,7 +83,6 @@ export default {
       }
 
       const duration = moment.duration(moment() - moment(data.stream.created_at));
-      console.log(duration.asHours());
 
       this.streamGame = data.stream.game;
       this.streamTitle = data.stream.channel.status;

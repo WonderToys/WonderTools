@@ -67,7 +67,9 @@ const createComponent = function createComponent(panel) {
 
     compDef.methods.__panelData = compDef.data;
     delete compDef['data'];
+  }
 
+  if ( typeof(compDef.mounted) === 'function' ) {
     compDef.methods.__panelMounted = compDef.mounted;
     delete compDef['mounted'];
   }
@@ -88,12 +90,12 @@ const createComponent = function createComponent(panel) {
 export const loadPanels = function loadPanels() {
   const promises = Object.values(moduleStore._modules)
     .map((module) => {
-      const panelConfig = module._ui.panels;
+      const panelConfig = module._ui.panels || {};
       return Object.keys(panelConfig)
         .map((key) => {
           const value = panelConfig[key];
 
-          value.panelName = key;
+          value.panelName = `${ module._moduleName }_${ key }`;
           value.module = module;
 
           return value;
@@ -119,7 +121,7 @@ export const getExtensions = function getExtensions(name) {
 
   return keys.map((moduleName) => {
     const module = moduleStore._modules[moduleName];
-    const extensions = module._ui.extensions;
+    const extensions = module._ui.extensions || {};
 
     const found = Object.keys(extensions).filter(e => e === name);
     if ( found == null ) return [];

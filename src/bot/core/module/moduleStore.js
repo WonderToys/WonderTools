@@ -122,9 +122,9 @@ class ModuleStore {
         modInstance._providers = [];
 
         this._modules[manifest.name] = modInstance;
-        return this._loadProviders(modInstance, manifest.providers)
-          .then(() => this._loadCommands(modInstance, manifest.commands))
-          .then(() => this._loadVariables(modInstance, manifest.variables));
+        return this._loadProviders(modInstance, manifest.providers || [])
+          .then(() => this._loadCommands(modInstance, manifest.commands || []))
+          .then(() => this._loadVariables(modInstance, manifest.variables || []));
       });
   }
 

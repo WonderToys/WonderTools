@@ -114,7 +114,6 @@ export default {
       }
 
       this.saveModel();
-      console.log('saved');
     },
     fieldVisible(field) {
       const hideFields = this.hideFields || [];

@@ -28,7 +28,7 @@ const getRepositories = function getRepositories() {
         return { 
           url: i.html_url,
           contentsUrl: i.contents_url, 
-          updated: i.updated_at 
+          updated: i.pushed_at 
         };
       }));
     });
