@@ -28,6 +28,10 @@ class Globals {
     return Client.getClient().connected;
   }
 
+  get logger() {
+    return Client.getClient()._logger;
+  }
+
   // -----
   //  Public
   // -----

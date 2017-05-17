@@ -126,6 +126,8 @@ class Client {
 
   // _validateCommand()
   _validateCommand(request) {
+    this._logger.info('VALIDATE', request);
+
     return moduleStore.notify('validateCommand', request)
       .then(() => {
         const canExecute = request.command.canExecute(request.viewer);
@@ -152,8 +154,10 @@ class Client {
           request._command = parsed.command;
           request._params = parsed.params;
 
+          this._logger.info('FOUND', request);
           const cooldown = parsed.command.onCooldown(viewer);
           if ( cooldown !== false && moment.isDuration(cooldown) ) {
+            this._logger.info('COOLDOWN', request);
             const secs = Math.round(cooldown.asSeconds());
             throw new Error(`Hey $user, you have another ${ secs }s to wait before you can execute that again!`);
           }
@@ -161,13 +165,18 @@ class Client {
           return this._validateCommand(request);
         }
 
+        this._logger.info('NOT FOUND', request);
         throw null;
       })
       .then((result) => {
+        this._logger.info('EXECUTE', request);
         return executeCommand(parsed.command, request, reply);
       })
       .then(() => moduleStore.notify('postCommand', request))
       .catch((result) => {
+        if ( result == null ) return;
+
+        this._logger.info('CATCH', { request, result });
         if ( Array.isArray(result) ) {
           result.forEach(res => reply(res));
         }
@@ -209,14 +218,14 @@ class Client {
       // this._channel = '#fahros';
       // this._channelId = '20698451';
       
-      this._channel = '#karerawr';
-      this._channelId = '29251148';
+      // this._channel = '#karerawr';
+      // this._channelId = '29251148';
       
       // this._channel = '#slevin_4';
       // this._channelId = '109589541';
 
-      // this._channel = '#pookajutsu';
-      // this._channelId = '29181653';
+      this._channel = '#pookajutsu';
+      this._channelId = '29181653';
 
       // this._channel = '#ampff';
       // this._channelId = '84620624';
@@ -235,7 +244,8 @@ class Client {
         username: this._botName,
         password: `oauth:${ this._accessToken }`
       },
-      channels: [ this._channel ]
+      channels: [ this._channel ],
+      logger: this._twitchLogger
     });
 
     return Promise.resolve(this);

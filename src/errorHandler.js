@@ -1,23 +1,6 @@
 import { join } from 'path';
-import { remote, ipcRenderer, shell } from 'electron';
-import { Logger, transports } from 'winston';
-import mkdirp from 'mkdirp';
-
-// Create logger
-const logPath = join(remote.app.getPath('userData'), 'log');
-mkdirp.sync(logPath);
-
-const logger = new Logger({
-  transports: [
-    new transports.File({
-      name: 'error-log',
-      filename: join(logPath, 'error.log'),
-      level: 'error'
-    })
-  ]
-});
-
-// Helpers
+import { shell } from 'electron';
+import { logger } from './logger';
 
 // openErrorDialog()
 const openErrorDialog = function openErrorDialog() {
