@@ -2,7 +2,7 @@
   "name": "wtclient",
   "productName": "WonderTools",
   "description": "WonderTools Desktop Client",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "author": "WonderToys <wondertoysvg@gmail.com>",
   "copyright": "© 2017, WonderToys",
   "homepage": "http://example.com",
@@ -26,7 +26,7 @@
     "postinstall": "install-app-deps",
     "build": "gulp build",
     "prerelease": "gulp build --env=production",
-    "release": "build",
+    "release": "build -p never",
     "prepublish": "gulp build --env=production",
     "publish": "build -p always",
     "start": "gulp start"

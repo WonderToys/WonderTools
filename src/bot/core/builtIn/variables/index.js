@@ -5,6 +5,8 @@ import IfVariable from './IfVariable';
 import FollowDateVariable from './FollowDateVariable';
 import QueueVariable from './QueueVariable';
 import RandVariable from './RandVariable';
+import GameVariable from './GameVariable';
+import TitleVariable from './TitleVariable';
 
 // Exports
 export default [
@@ -14,5 +16,7 @@ export default [
   new IfVariable(),
   new FollowDateVariable(),
   new QueueVariable(),
-  new RandVariable()
+  new RandVariable(),
+  new TitleVariable(),
+  new GameVariable()
 ];

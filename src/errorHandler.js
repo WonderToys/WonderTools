@@ -1,6 +1,8 @@
 import { join } from 'path';
-import { shell } from 'electron';
+import { remote, shell } from 'electron';
 import { logger } from './logger';
+
+const logPath = join(remote.app.getPath('userData'), 'log');
 
 // openErrorDialog()
 const openErrorDialog = function openErrorDialog() {

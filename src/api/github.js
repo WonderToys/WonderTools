@@ -4,13 +4,16 @@ import fs from 'fs';
 import request from 'request';
 import mkdirp from 'mkdirp';
 
+import appConfig from '../../config';
+
 // -----
 //  Helpers
 // -----
 
 const DEFAULT_HEADERS = {
   'User-Agent': 'WonderTools',
-  Accept: 'application/vnd.github.mercy-preview+json'
+  Accept: 'application/vnd.github.mercy-preview+json',
+  Authorization: `token ${ appConfig.github.token }`
 };
 
 // getRepositories()

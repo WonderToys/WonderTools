@@ -60,7 +60,7 @@ class ViewerStore {
 
   _updateUserId(viewer) {
     if ( viewer.userId == null ) {
-      return twitch.getUserId(viewer.username)
+      return twitch.getUser(viewer.username)
         .then((user) => {
           viewer.userId = user._id;
           viewer.displayName = user.display_name;

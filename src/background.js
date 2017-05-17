@@ -67,7 +67,11 @@ app.on('ready', () => {
     mainWindow.webContents.send('set-notification', `Downloading Update (${ Math.round(event.percent) }%)`);
   });
 
-  autoUpdater.on('error', () => {
+  autoUpdater.on('update-not-available', (event) => {
+    mainWindow.webContents.send('set-notification', 'No updates found!');
+  });
+
+  autoUpdater.on('error', (error) => {
     mainWindow.webContents.send('set-notification', '');
   });
 

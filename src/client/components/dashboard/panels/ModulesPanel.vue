@@ -94,6 +94,7 @@ td {
 import { shell, remote } from 'electron';
 import { unlinkSync } from 'fs';
 import { join } from 'path';
+import { sortBy } from 'lodash';
 
 import semver from 'semver';
 import moment from 'moment';
@@ -129,6 +130,7 @@ export default {
             const found = remoteModules.find(m => m.name === module.name);
             if ( found != null ) {
               module.url = found.url;
+              module.updated = found.updated;
               allModules = allModules.filter(m => m.name !== module.name);
 
               if ( semver.gt(found.version, module.version) ) {
@@ -140,9 +142,14 @@ export default {
             allModules.push(module);
           });
 
-          this.modules = allModules;
+          this.modules = sortBy(allModules, (item) => {
+            const hasUpdate = item.hasUpdate === true ? 0 : 1;
+            const isLocal = item.isLocal === true ? 0 : 1;
 
-          return allModules;
+            return [ hasUpdate, isLocal, item.name ];
+          });
+
+          return this.modules;
         });
     },
     getUpdated(when) {

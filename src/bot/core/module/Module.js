@@ -5,6 +5,8 @@ class Module {
   constructor() {
     
   }
+
+  unload() {}
 };
 
 // Exports

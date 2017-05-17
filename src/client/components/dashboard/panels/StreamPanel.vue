@@ -70,7 +70,7 @@ export default {
   },
   methods: {
     setStreamInfo(data) {
-      if ( data == null ) {
+      if ( data == null || data.stream == null ) {
         this.online = false;
         this.streamTitle = '';
         this.streamGame = '';

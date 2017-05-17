@@ -2,33 +2,52 @@
   Template
 -->
 <template lang="jade">
-div#customCommandsPanel.gallery-curve-wrapper
+div#commandsPanel.gallery-curve-wrapper
   div.gallery-header
-    span Custom Commands
-    p.caption Add, remove, and modify custom commands. 
+    span Commands
+    p.caption Manage (Add, modify, remove) built in and custom commands.
   div.gallery-body
     div.title-wrapper
-      h4 Custom Commands
+      h4 Commands
     div.content(v-if="isActive")
-      div.row
-        div.right
-          a.btn.waves-effect.waves-light(href="#", @click="openAddModal")
-            i.material-icons.left add
-            | Add Custom Command
-      div.row
-        ul.collapsible.popout(data-collapsible="accordion", v-if="commands.length > 0")
-          li(v-for="command in commands")
-            div.collapsible-header 
-              | {{ command.command }}
-              div.right(style="display: inline-block; height: 25px; margin-top: 0.75rem;")
-                i.material-icons(style="line-height: 22px; cursor: pointer;", @click.prevent="deleteCustomCommand(command)") delete
-                input.filled-in(:id="`${ command.config._id }_enabled`", type="checkbox", v-model="command.config.isEnabled")
-                label(:for="`${ command.config._id }_enabled`", data-position="top", data-tooltip="Disable this command", v-if="command.config.isEnabled === true")
-                label(:for="`${ command.config._id }_enabled`", data-position="top", data-tooltip="Enable this command", v-else="")
-            div.collapsible-body
-              command-editor(:command="command", :hide-fields="[ 'isEnabled' ]")
-        //- end accordion
-        h5(v-else) No custom commands found!
+      ul.tabs.tabs-fixed-width
+        li.tab: a.active(href="#buildInTabPane") Built In
+        li.tab: a(href="#customTabPane") Custom
+
+      div.tab-content#buildInTabPane
+        div.row
+          ul.collapsible.popout(data-collapsible="accordion", v-if="commands.length > 0")
+            li(v-for="command in commands")
+              div.collapsible-header 
+                | {{ command.command }}
+                div.right(style="display: inline-block; height: 25px; margin-top: 0.75rem;")
+                  input.filled-in(:id="`${ command.config._id }_enabled`", type="checkbox", v-model="command.config.isEnabled")
+                  label(:for="`${ command.config._id }_enabled`", data-position="top", data-tooltip="Disable this command", v-if="command.config.isEnabled === true")
+                  label(:for="`${ command.config._id }_enabled`", data-position="top", data-tooltip="Enable this command", v-else="")
+              div.collapsible-body
+                command-editor(:command="command", :hide-fields="[ 'isEnabled' ]")
+
+      div.tab-content#customTabPane
+        div.row
+          div.right
+            a.btn.waves-effect.waves-light(href="#", @click="openAddModal")
+              i.material-icons.left add
+              | Add Custom Command
+        div.row
+          ul.collapsible.popout(data-collapsible="accordion", v-if="customCommands.length > 0")
+            li(v-for="command in customCommands")
+              div.collapsible-header 
+                | {{ command.command }}
+                div.right(style="display: inline-block; height: 25px; margin-top: 0.75rem;")
+                  i.material-icons(style="line-height: 22px; cursor: pointer;", @click.prevent="deleteCustomCommand(command)") delete
+                  input.filled-in(:id="`${ command.config._id }_enabled`", type="checkbox", v-model="command.config.isEnabled")
+                  label(:for="`${ command.config._id }_enabled`", data-position="top", data-tooltip="Disable this command", v-if="command.config.isEnabled === true")
+                  label(:for="`${ command.config._id }_enabled`", data-position="top", data-tooltip="Enable this command", v-else="")
+              div.collapsible-body
+                command-editor(:command="command", :hide-fields="[ 'isEnabled' ]")
+
+          //- end accordion
+          h5(v-else) No custom commands found!
 
   //- Add modal
   div#addCustomCommandModal.modal.modal-fixed-footer
@@ -46,6 +65,12 @@ div#customCommandsPanel.gallery-curve-wrapper
   Styles
 -->
 <style lang="less">
+#commandsPanel {
+  .tab-content {
+    margin-top: 1rem;
+  }
+}
+
 #addCustomCommandModal {
   input.select-dropdown {
     margin-bottom: 0px;
@@ -83,7 +108,7 @@ export default {
   },
   data() {
     return {
-      commands: [],
+      customCommands: [],
       newCommand: null,
       canSaveCommand: false
     };
@@ -93,6 +118,12 @@ export default {
       if ( this.isActive !== true ) return;
 
       this.loadCommands();
+      this.$nextTick(() => {
+        const $element = $(this.$el);
+
+        $element.find('ul.tabs').tabs();
+        $element.find('[data-tooltip]').tooltip({ delay: 1000 });
+      });
     },
     newCommand: {
       handler() {
@@ -121,7 +152,9 @@ export default {
         .then(() => this.loadCommands());
     },
     loadCommands() {
-      this.commands = commandStore._commands.filter(c => c.isCustom === true);
+      this.commands = commandStore._commands.filter(c => c.__isOfficial === true);
+      this.customCommands = commandStore._commands.filter(c => c.isCustom === true);
+
       this.$nextTick(() => {
         const $element = $(this.$el);
 
@@ -149,8 +182,6 @@ export default {
           that.newCommand = null;
         }
       });
-
-    $element.find('[data-tooltip]').tooltip({ delay: 1000 });
   }
 }
 </script>

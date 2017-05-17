@@ -9,8 +9,8 @@ div.gallery.row
   div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$ModulesPanel")
     modules-panel(:is-active="isPanelActive('$ModulesPanel')", @modules-changed="onModulesChanged")
 
-  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$CustomCommandsPanel")
-    custom-commands-panel(:is-active="isPanelActive('$CustomCommandsPanel')")
+  div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$CommandsPanel")
+    commands-panel(:is-active="isPanelActive('$CommandsPanel')")
 
   div.col.l3.m4.s12.gallery-item.gallery-expand.gallery-filter(data-panel-name="$TimersPanel")
     timers-panel(:is-active="isPanelActive('$TimersPanel')")
@@ -70,7 +70,7 @@ div.gallery.row
 import { loadPanels } from '../panelLoader/panelLoader';
 
 import StreamPanel from './panels/StreamPanel.vue';
-import CustomCommandsPanel from './panels/CustomCommandsPanel.vue';
+import CommandsPanel from './panels/CommandsPanel.vue';
 import ViewersPanel from './panels/ViewersPanel.vue';
 import ModulesPanel from './panels/ModulesPanel.vue';
 import TimersPanel from './panels/TimersPanel.vue';
@@ -79,7 +79,7 @@ import VariablesPanel from './panels/VariablesPanel.vue';
 export default {
   components: {
     StreamPanel,
-    CustomCommandsPanel,
+    CommandsPanel,
     ViewersPanel,
     ModulesPanel,
     TimersPanel,

@@ -1,4 +1,4 @@
-import { unlink } from 'fs';
+import { unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 import { remote } from 'electron';
 import { Logger, transports } from 'winston';
@@ -9,9 +9,15 @@ const logPath = join(remote.app.getPath('userData'), 'log');
 mkdirp.sync(logPath);
 
 // Remove twitch logs, if found
-unlink(join(logPath, 'twitch-error.log'));
-unlink(join(logPath, 'twitch-warn.log'));
-unlink(join(logPath, 'twitch-info.log'));
+if ( existsSync(join(logPath, 'twitch-error.log')) ) {
+  unlinkSync(join(logPath, 'twitch-error.log'));
+}
+if ( existsSync(join(logPath, 'twitch-warn.log')) ) {
+  unlinkSync(join(logPath, 'twitch-warn.log'));
+}
+if ( existsSync(join(logPath, 'twitch-info.log')) ) {
+  unlinkSync(join(logPath, 'twitch-info.log'));
+}
 
 // Exports
 export const logger = new Logger({

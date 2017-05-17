@@ -82,10 +82,31 @@ export const getViewers = function getViewers(channel, retry) {
     });
 }; //- getViewers()
 
-// getUserId()
-export const getUserId = function getUserId(username) {
-  return _get(_getUri(`/users?login=${ username }&api_version=5`));
-}; //- getUserId()
+// getUser()
+export const getUser = function getUser(username) {
+  return _get(_getUri(`/users?login=${ username }&api_version=5`))
+    .then((data) => {
+      if ( data == null ) return null;
+
+      data = JSON.parse(data);
+      return data.users[0];
+    });
+}; //- getUser()
+
+// getChannelInfo()
+export const getChannelInfo = function getChannelInfo(channel) {
+  channel = channel.replace('#', '');
+
+  return getUser(channel)
+    .then((user) => {
+      if ( user != null && user._id != null ) {
+        const url = _getUri(`/channels/${ user._id }`);
+        return _get(url).then((data) => JSON.parse(data));
+      }
+
+      return null;
+    })
+}; //- getChannelInfo()
 
 // getUserFollowsChannel()
 export const getUserFollowsChannel = function getUserFollowsChannel(userId, channel) {
